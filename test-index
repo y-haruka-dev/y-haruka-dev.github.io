@@ -2,20 +2,190 @@
 <html lang="ja">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>はじめてのGitHub Pages</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>あなたのサイトタイトル</title>
+  <meta name="description" content="ここに説明文。検索結果やSNSで表示されます。">
   <style>
-    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 2rem; }
-    .card { max-width: 720px; margin: auto; padding: 2rem; border: 1px solid #ddd; border-radius: 12px; }
-    h1 { margin-top: 0; }
-    a { text-decoration: none; }
+    /* ==== 基本設計（タイポ・色・レイアウト） ==== */
+    :root{
+      --bg: #0b0c0f;            /* 背景（ダーク時）   */
+      --fg: #eef1f4;            /* 文字色（ダーク時） */
+      --muted:#9aa4ad;
+      --card:#12141a;
+      --outline:#232832;
+      --brand:#6ee7ff;          /* アクセントカラー  */
+      --brand-2:#a78bfa;
+      --radius:16px;
+      --shadow:0 10px 30px rgba(0,0,0,.25);
+      --max:1100px;
+    }
+    @media (prefers-color-scheme: light){
+      :root{
+        --bg:#f7f8fb; --fg:#0b1020; --muted:#5a6473;
+        --card:#ffffff; --outline:#e7eaf0; --shadow:0 10px 25px rgba(20,30,60,.08);
+      }
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
+      color:var(--fg); background:radial-gradient(1200px 800px at 10% -20%, #1a1f2b 0%, transparent 60%), var(--bg);
+      line-height:1.7; letter-spacing:.02em;
+    }
+    a{color:inherit; text-decoration:none}
+    .container{max-width:var(--max); margin-inline:auto; padding:24px}
+    .pill{
+      display:inline-flex; align-items:center; gap:.5rem;
+      padding:.4rem .8rem; border:1px solid var(--outline); border-radius:999px; font-size:.84rem; color:var(--muted);
+      background:linear-gradient(180deg, transparent, rgba(255,255,255,.02));
+    }
+    .btn{
+      display:inline-flex; align-items:center; gap:.6rem;
+      padding:.8rem 1.1rem; border-radius:12px; border:1px solid var(--outline);
+      background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,0));
+      box-shadow:var(--shadow); transition:transform .2s ease, box-shadow .2s ease, border-color .2s;
+      will-change: transform;
+    }
+    .btn:hover{ transform: translateY(-2px); box-shadow:0 16px 35px rgba(0,0,0,.25); border-color:transparent }
+    .btn.primary{ background:linear-gradient(135deg, var(--brand), var(--brand-2)); color:#081018; font-weight:700 }
+    .grid{ display:grid; gap:24px }
+    @media (min-width:900px){ .grid-3{ grid-template-columns: repeat(3, 1fr) } .grid-2{ grid-template-columns: 1.2fr 1fr } }
+    .card{
+      background:var(--card); border:1px solid var(--outline); border-radius:var(--radius); padding:24px; box-shadow:var(--shadow)
+    }
+    .muted{ color:var(--muted) }
+    .badge{ font-size:.8rem; padding:.25rem .6rem; border:1px solid var(--outline); border-radius:999px; color:var(--muted) }
+
+    /* ==== ヒーロー ==== */
+    .hero{ padding:80px 24px 40px }
+    .title{
+      font-weight:800; line-height:1.15; margin:16px 0 14px;
+      font-size:clamp(28px, 5vw, 44px);
+      background:linear-gradient(135deg, #fff, #dbeafe 40%, #c7d2fe 70%, #f0abfc);
+      -webkit-background-clip:text; background-clip:text; color:transparent;
+    }
+    .hero-sub{ max-width:760px }
+
+    /* ==== セクション見出し ==== */
+    .section-title{ font-size:clamp(20px, 2.6vw, 28px); font-weight:700; margin:8px 0 2px }
+    .section-lead{ margin:0 0 18px; color:var(--muted) }
+
+    /* ==== フッター ==== */
+    footer{ border-top:1px solid var(--outline); margin-top:48px }
+    .footer-inner{ display:flex; flex-wrap:wrap; gap:12px; align-items:center; justify-content:space-between; padding:24px }
+    .logo{ display:inline-flex; align-items:center; gap:.6rem; font-weight:800 }
+    .logo svg{ width:22px; height:22px }
+
+    /* ==== さりげないモーション ==== */
+    .floaty{ animation: floaty 4s ease-in-out infinite }
+    @keyframes floaty{ 0%,100%{ transform:translateY(0) } 50%{ transform:translateY(-6px) } }
+    .fadein{ animation: fade .6s ease both }
+    @keyframes fade{ from{ opacity:0; transform: translateY(6px) } to{ opacity:1; transform:none } }
   </style>
 </head>
 <body>
-  <div class="card">
-    <h1>GitHub Pages へようこそ 🎉</h1>
-    <p>このページは GitHub Pages で公開されています。</p>
-    <p>編集するには、リポジトリで <code>index.html</code> を開いて「✏️ Edit」→「Commit changes」。</p>
-  </div>
+
+  <!-- ==== Header / ナビ（必要ならリンクを追加） ==== -->
+  <header class="container">
+    <div style="display:flex; align-items:center; justify-content:space-between; gap:16px">
+      <a class="logo" href="#">
+        <!-- ミニマルなロゴ（SVG）。テキストをサイト名に変えてOK -->
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M4 12a8 8 0 1 0 16 0A8 8 0 0 0 4 12Z" stroke="currentColor" stroke-width="1.5"/>
+          <path d="M8 12h8M12 8v8" stroke="currentColor" stroke-width="1.5" />
+        </svg>
+        <span>SiteName</span>
+      </a>
+      <nav style="display:flex; gap:12px">
+        <a class="badge" href="#features">特徴</a>
+        <a class="badge" href="#works">作例</a>
+        <a class="badge" href="#contact">連絡先</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- ==== Hero ==== -->
+  <section class="hero">
+    <div class="container grid grid-2">
+      <div class="fadein">
+        <span class="pill">ようこそ 👋</span>
+        <h1 class="title">シンプルなのに、美しい。<br>ミニマル&モダンな1ページサイト</h1>
+        <p class="hero-sub muted">
+          ここにサイトの説明を2〜3行。何を提供しているのか、誰に向けたページか、ざっくり伝えます。
+          テキストは後で自由に書き換えてください。
+        </p>
+        <div style="display:flex; gap:12px; margin-top:18px">
+          <a class="btn primary" href="#contact">お問い合わせ</a>
+          <a class="btn" href="#features">もっと見る</a>
+        </div>
+      </div>
+      <div class="floaty card">
+        <h3 style="margin-top:0">ハイライト</h3>
+        <ul class="muted" style="margin:0; padding-left:18px">
+          <li>ダーク/ライト自動対応</li>
+          <li>1ファイル完結・画像なしで軽量</li>
+          <li>ボタンやカードなどUI部品つき</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==== Features ==== -->
+  <section id="features" class="container">
+    <h2 class="section-title">特徴</h2>
+    <p class="section-lead">必要十分な部品だけを用意。テキストを書き換えるだけで完成します。</p>
+    <div class="grid grid-3">
+      <div class="card">
+        <h3 style="margin-top:0">読みやすいデザイン</h3>
+        <p class="muted">余白・行間・配色を調整済み。長文でも疲れにくく、誰でも読みやすい。</p>
+      </div>
+      <div class="card">
+        <h3 style="margin-top:0">アクセントカラー</h3>
+        <p class="muted">ブランドカラーは <code>--brand</code> と <code>--brand-2</code> を編集するだけ。</p>
+      </div>
+      <div class="card">
+        <h3 style="margin-top:0">スマホ最適化</h3>
+        <p class="muted">グリッドは自動で1→2→3列へ。ボタンも指で押しやすいサイズ。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==== Works / ギャラリー（テキストだけでもOK） ==== -->
+  <section id="works" class="container">
+    <h2 class="section-title">作例/実績</h2>
+    <p class="section-lead">サムネ画像が無くてもカードで整然と見せられます。</p>
+    <div class="grid grid-3">
+      <div class="card"><strong>Project Alpha</strong><p class="muted">説明テキスト。リンクや成果のひとこと。</p></div>
+      <div class="card"><strong>Project Beta</strong><p class="muted">説明テキスト。リンクや成果のひとこと。</p></div>
+      <div class="card"><strong>Project Gamma</strong><p class="muted">説明テキスト。リンクや成果のひとこと。</p></div>
+    </div>
+  </section>
+
+  <!-- ==== Contact ==== -->
+  <section id="contact" class="container">
+    <h2 class="section-title">お問い合わせ</h2>
+    <p class="section-lead">SNSやメールへのリンクを置くだけでも十分です。</p>
+    <div class="card">
+      <p style="margin:0 0 12px">メール：<a href="mailto:your.name@example.com">your.name@example.com</a></p>
+      <div style="display:flex; gap:12px; flex-wrap:wrap">
+        <a class="btn" href="#" aria-label="X/Twitter">X / Twitter</a>
+        <a class="btn" href="#" aria-label="GitHub">GitHub</a>
+        <a class="btn" href="#" aria-label="Qiita">Qiita</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==== Footer ==== -->
+  <footer>
+    <div class="container footer-inner">
+      <span class="muted">© <span id="y"></span> Your Name</span>
+      <a class="badge" href="#">トップへ戻る ↑</a>
+    </div>
+  </footer>
+
+  <script>
+    // 年号を自動更新
+    document.getElementById('y').textContent = new Date().getFullYear();
+  </script>
 </body>
 </html>
