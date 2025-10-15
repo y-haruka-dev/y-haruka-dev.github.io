@@ -150,7 +150,7 @@
     </div>
   </section>
 
-  <!-- ==== Works / ギャラリー（テキストだけでもOK） ==== -->
+  <!-- ==== Works / ギャラリー（テキストだけ） ==== -->
   <section id="works" class="container">
     <h2 class="section-title">作例/実績</h2>
     <p class="section-lead">サムネ画像が無くてもカードで整然と見せられます。</p>
