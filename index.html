@@ -189,3 +189,73 @@
   </script>
 </body>
 </html>
+
+/* ===== 見やすさ改善の上書き ===== */
+
+/* 1) 背景の“もや”を弱めて本文を最優先に */
+body{
+  background: var(--bg);            /* 派手なradialは一旦オフ */
+}
+/* 背景の装飾を入れる場合はヒーローの裏側だけに */
+.hero{
+  position: relative;
+  isolation: isolate;
+}
+.hero::before{
+  content:"";
+  position:absolute; inset:-80px -40px auto -40px; height:260px;
+  background: radial-gradient(60% 80% at 10% 0%, rgba(120,130,150,.18), transparent 70%);
+  z-index: -1;                       /* テキストより背面に */
+  filter: blur(2px);
+}
+
+/* 2) ヒーロー見出しのコントラストを確保（薄すぎるのを改善） */
+.title{
+  color:#0b1020;                     /* フォールバックで濃い文字色 */
+  background: linear-gradient(135deg,#0b1020 20%, #334155 60%, #0b1020);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+@media (prefers-color-scheme: dark){
+  .title{
+    background: linear-gradient(135deg,#ffffff 15%, #dbeafe 55%, #ffffff);
+  }
+}
+
+/* 3) ベースの余白・最大幅を少し広げて窮屈さを解消 */
+.container, .wrap{ max-width: 1120px; padding-inline: 24px; }
+.hero{ padding: 72px 24px 32px; }
+.section-title{ margin-top: 8px; }
+
+/* 4) カードのコントラストを上げ、影は控えめに */
+.card{
+  background: var(--card);
+  border: 1px solid var(--outline);
+  box-shadow: 0 8px 24px rgba(0,0,0,.08);
+}
+@media (prefers-color-scheme: light){
+  .card{ box-shadow: 0 10px 22px rgba(20,30,60,.08); }
+}
+
+/* 5) 箇条書きの視認性（行間とドット間隔） */
+.card ul{ line-height: 1.7; padding-left: 1.2rem; }
+.card li{ margin-bottom: .25rem; }
+
+/* 6) ボタンの高さと間隔を統一 */
+.btn{ min-height: 44px; padding: .75rem 1.1rem; }
+.btn + .btn{ margin-left: 8px; }
+
+/* 7) 見出しと本文のサイズ感（スマホでの視認性） */
+h1,h2,h3{ line-height: 1.25; }
+.title{ font-size: clamp(28px, 5vw, 44px); }
+.section-title{ font-size: clamp(20px, 2.4vw, 28px); }
+
+/* 8) 余白の整頓：セクション間を一定に */
+section{ margin-block: 18px; }
+#features, #works, #contact{ margin-top: 28px; }
+
+/* 9) 動きが苦手な人への配慮（ふわっと演出をOFF） */
+@media (prefers-reduced-motion: reduce){
+  .floaty, .fadein{ animation: none !important; }
+  .btn{ transition: none !important; }
+}
+
