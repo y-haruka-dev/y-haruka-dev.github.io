@@ -1,261 +1,472 @@
 <!doctype html>
 <html lang="ja">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>あなたのサイトタイトル</title>
-  <meta name="description" content="ここに説明文。検索結果やSNSで表示されます。">
-  <style>
-    /* ==== 基本設計（タイポ・色・レイアウト） ==== */
-    :root{
-      --bg: #0b0c0f;            /* 背景（ダーク時）   */
-      --fg: #eef1f4;            /* 文字色（ダーク時） */
-      --muted:#9aa4ad;
-      --card:#12141a;
-      --outline:#232832;
-      --brand:#6ee7ff;          /* アクセントカラー  */
-      --brand-2:#a78bfa;
-      --radius:16px;
-      --shadow:0 10px 30px rgba(0,0,0,.25);
-      --max:1100px;
-    }
-    @media (prefers-color-scheme: light){
-      :root{
-        --bg:#f7f8fb; --fg:#0b1020; --muted:#5a6473;
-        --card:#ffffff; --outline:#e7eaf0; --shadow:0 10px 25px rgba(20,30,60,.08);
-      }
-    }
-    *{box-sizing:border-box}
-    html,body{height:100%}
-    body{
-      margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
-      color:var(--fg); background:radial-gradient(1200px 800px at 10% -20%, #1a1f2b 0%, transparent 60%), var(--bg);
-      line-height:1.7; letter-spacing:.02em;
-    }
-    a{color:inherit; text-decoration:none}
-    .container{max-width:var(--max); margin-inline:auto; padding:24px}
-    .pill{
-      display:inline-flex; align-items:center; gap:.5rem;
-      padding:.4rem .8rem; border:1px solid var(--outline); border-radius:999px; font-size:.84rem; color:var(--muted);
-      background:linear-gradient(180deg, transparent, rgba(255,255,255,.02));
-    }
-    .btn{
-      display:inline-flex; align-items:center; gap:.6rem;
-      padding:.8rem 1.1rem; border-radius:12px; border:1px solid var(--outline);
-      background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,0));
-      box-shadow:var(--shadow); transition:transform .2s ease, box-shadow .2s ease, border-color .2s;
-      will-change: transform;
-    }
-    .btn:hover{ transform: translateY(-2px); box-shadow:0 16px 35px rgba(0,0,0,.25); border-color:transparent }
-    .btn.primary{ background:linear-gradient(135deg, var(--brand), var(--brand-2)); color:#081018; font-weight:700 }
-    .grid{ display:grid; gap:24px }
-    @media (min-width:900px){ .grid-3{ grid-template-columns: repeat(3, 1fr) } .grid-2{ grid-template-columns: 1.2fr 1fr } }
-    .card{
-      background:var(--card); border:1px solid var(--outline); border-radius:var(--radius); padding:24px; box-shadow:var(--shadow)
-    }
-    .muted{ color:var(--muted) }
-    .badge{ font-size:.8rem; padding:.25rem .6rem; border:1px solid var(--outline); border-radius:999px; color:var(--muted) }
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>ポモドーロタイマー</title>
+<meta name="description" content="カテゴリ別に作業時間を記録。履歴・日別集計・フォント/配色/背景カスタマイズ対応。">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;600;700&family=Noto+Serif+JP:wght@400;600;700&display=swap" rel="stylesheet">
 
-    /* ==== ヒーロー ==== */
-    .hero{ padding:80px 24px 40px }
-    .title{
-      font-weight:800; line-height:1.15; margin:16px 0 14px;
-      font-size:clamp(28px, 5vw, 44px);
-      background:linear-gradient(135deg, #fff, #dbeafe 40%, #c7d2fe 70%, #f0abfc);
-      -webkit-background-clip:text; background-clip:text; color:transparent;
-    }
-    .hero-sub{ max-width:760px }
+<style>
+  :root{
+    --bg:#f7f8fb; --fg:#0b1020; --muted:#5a6473;
+    --card:#ffffff; --line:#e6eaf1;
+    --brand:#5cc9ee; --brand2:#9aa7ff;
+    --radius:12px; --shadow:0 8px 18px rgba(20,30,60,.06);
+    --wrap:1000px; --btnh:44px;
+    --font:"Noto Sans JP",system-ui,-apple-system,"Segoe UI",Roboto,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif;
 
-    /* ==== セクション見出し ==== */
-    .section-title{ font-size:clamp(20px, 2.6vw, 28px); font-weight:700; margin:8px 0 2px }
-    .section-lead{ margin:0 0 18px; color:var(--muted) }
+    --ui-fg:var(--fg);                /* 通常テキスト色（配色②で白に切替） */
+    --timer-box-h:clamp(220px,36vw,360px);
 
-    /* ==== フッター ==== */
-    footer{ border-top:1px solid var(--outline); margin-top:48px }
-    .footer-inner{ display:flex; flex-wrap:wrap; gap:12px; align-items:center; justify-content:space-between; padding:24px }
-    .logo{ display:inline-flex; align-items:center; gap:.6rem; font-weight:800 }
-    .logo svg{ width:22px; height:22px }
+    /* 入力欄（フィールド）用の色トークン */
+    --field-bg:#ffffff;
+    --field-fg:var(--ui-fg);
+    --field-border:#e5e7eb;
+    --field-focus:#7dd3fc;
+  }
+  @media (prefers-color-scheme: dark){ :root{ --shadow:0 10px 22px rgba(0,0,0,.18) } }
 
-    /* ==== さりげないモーション ==== */
-    .floaty{ animation: floaty 4s ease-in-out infinite }
-    @keyframes floaty{ 0%,100%{ transform:translateY(0) } 50%{ transform:translateY(-6px) } }
-    .fadein{ animation: fade .6s ease both }
-    @keyframes fade{ from{ opacity:0; transform: translateY(6px) } to{ opacity:1; transform:none } }
-  </style>
+  *{box-sizing:border-box}
+  html{font-size:17px}
+  body{margin:0;background:var(--bg);color:var(--ui-fg);font-family:var(--font);line-height:1.7}
+  a{color:inherit;text-decoration:none}
+  .wrap{max-width:var(--wrap);margin:auto;padding:16px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow)}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .muted{color:var(--muted)}
+
+  /* App bar & Tabs */
+  .appbar{position:sticky;top:0;z-index:10;backdrop-filter:blur(8px);
+    background:color-mix(in oklab,var(--bg) 82%,transparent);
+    border:1px solid var(--line);border-radius:16px;padding:10px 12px;margin-bottom:12px;
+    display:flex;justify-content:space-between;align-items:center}
+  .logo{font-weight:800}
+  .tabs a{display:inline-flex;gap:6px;align-items:center;padding:.45rem .7rem;border-radius:10px;border:1px solid transparent}
+  .tabs a.active{border-color:var(--line);background:linear-gradient(180deg,rgba(255,255,255,.05),transparent)}
+
+  /* Inputs / Selects / Buttons —— コントラスト強化版 */
+  select,input,button{
+    height:var(--btnh);
+    padding:.6rem .8rem;
+    border:1px solid var(--field-border);
+    border-radius:10px;
+    background:var(--field-bg);
+    color:var(--field-fg);
+  }
+  select{appearance:none;background-clip:padding-box}
+  input::placeholder{color:color-mix(in oklab,var(--field-fg) 70%,var(--field-bg) 30%)}
+  select:focus,input:focus,button:focus{
+    outline:none;
+    border-color:var(--field-focus);
+    box-shadow:0 0 0 3px color-mix(in oklab,var(--field-focus) 35%,transparent);
+  }
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;cursor:pointer}
+  .primary{background:linear-gradient(135deg,var(--brand),var(--brand2));color:#081018;border:none;font-weight:700}
+  .danger{border-color:#ff6b6b}
+
+  /* Timer */
+  .timer-wrap{display:flex;flex-direction:column;align-items:center;padding:56px 8px 18px}
+  .timer-box{
+    position:relative;width:min(92vw,780px);height:var(--timer-box-h);
+    display:flex;align-items:center;justify-content:center;border-radius:18px;overflow:hidden;margin:20px 0 32px;
+  }
+  .timer-bg{position:absolute;inset:0;background-size:cover;background-position:center;opacity:.4;pointer-events:none;filter:saturate(.9) blur(.3px)}
+  .timer{position:relative;font-weight:800;font-size:clamp(72px,14vw,140px);letter-spacing:.04em;text-align:center;margin:0;color:var(--fg)}
+  .timer.is-break{opacity:.25;filter:grayscale(.35) saturate(.5)}
+  .btn-row{display:flex;gap:14px;justify-content:center;margin-top:22px;margin-bottom:28px}
+  .icon-btn{width:56px;height:56px;border-radius:14px;color:var(--fg)}
+  .icon{width:22px;height:22px}
+
+  /* Table & canvas */
+  table{width:100%;border-collapse:collapse;margin-top:10px;font-size:15px}
+  th,td{border-bottom:1px solid var(--line);padding:.55rem .4rem;text-align:left}
+  .right{text-align:right}
+  canvas{width:100%;height:auto;display:block}
+
+  /* Layout */
+  .grid{display:grid;gap:14px}
+  @media (min-width:600px){ .grid-2{grid-template-columns:1.2fr 1fr} }
+  :focus-visible{outline:2px solid #7aa2ff;outline-offset:2px}
+  @media (prefers-reduced-motion:reduce){ .tabs a,.btn{transition:none} }
+</style>
 </head>
 <body>
-
-  <!-- ==== Header / ナビ（必要ならリンクを追加） ==== -->
-  <header class="container">
-    <div style="display:flex; align-items:center; justify-content:space-between; gap:16px">
-      <a class="logo" href="#">
-        <!-- ミニマルなロゴ（SVG）。テキストをサイト名に変えてOK -->
-        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-          <path d="M4 12a8 8 0 1 0 16 0A8 8 0 0 0 4 12Z" stroke="currentColor" stroke-width="1.5"/>
-          <path d="M8 12h8M12 8v8" stroke="currentColor" stroke-width="1.5" />
-        </svg>
-        <span>SiteName</span>
-      </a>
-      <nav style="display:flex; gap:12px">
-        <a class="badge" href="#features">特徴</a>
-        <a class="badge" href="#works">作例</a>
-        <a class="badge" href="#contact">連絡先</a>
+  <div class="wrap">
+    <header class="appbar">
+      <strong class="logo">Pomodoro</strong>
+      <nav class="tabs" aria-label="タブ">
+        <a href="#timer" class="active" data-tab="timer" aria-controls="view-timer">タイマー</a>
+        <a href="#logs" data-tab="logs" aria-controls="view-logs">履歴</a>
+        <a href="#stats" data-tab="stats" aria-controls="view-stats">日別集計</a>
+        <a href="#custom" data-tab="custom" aria-controls="view-custom">カスタマイズ</a>
       </nav>
-    </div>
-  </header>
+      <span class="muted" id="status">停止中</span>
+    </header>
 
-  <!-- ==== Hero ==== -->
-  <section class="hero">
-    <div class="container grid grid-2">
-      <div class="fadein">
-        <span class="pill">ようこそ 👋</span>
-        <h1 class="title">シンプルなのに、美しい。<br>ミニマル&モダンな1ページサイト</h1>
-        <p class="hero-sub muted">
-          ここにサイトの説明を2〜3行。何を提供しているのか、誰に向けたページか、ざっくり伝えます。
-          テキストは後で自由に書き換えてください。
-        </p>
-        <div style="display:flex; gap:12px; margin-top:18px">
-          <a class="btn primary" href="#contact">お問い合わせ</a>
-          <a class="btn" href="#features">もっと見る</a>
+    <!-- Timer -->
+    <section id="view-timer" data-view="timer" class="card">
+      <div class="row" role="group" aria-label="基本設定">
+        <label>カテゴリ：
+          <select id="category" aria-label="カテゴリ"></select>
+        </label>
+        <input id="newCat" placeholder="新しいカテゴリ名を追加" aria-label="新しいカテゴリ名">
+        <button class="btn" id="addCat" title="カテゴリを追加" aria-label="カテゴリを追加">
+          <svg class="icon" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        </button>
+        <label>作業（分）：
+          <input id="workMin" type="number" min="1" value="25" aria-label="作業分数">
+        </label>
+        <label>休憩（分）：
+          <input id="breakMin" type="number" min="1" value="5" aria-label="休憩分数">
+        </label>
+      </div>
+
+      <div class="timer-wrap">
+        <div class="timer-box">
+          <div class="timer-bg" id="timerBg"></div>
+          <div class="timer" id="display" aria-live="polite">25:00</div>
+        </div>
+        <div class="btn-row" role="group" aria-label="操作ボタン">
+          <button class="btn primary icon-btn" id="startBtn" title="スタート" aria-label="スタート">
+            <svg class="icon" viewBox="0 0 24 24" fill="none"><path d="M8 6l10 6-10 6V6z" fill="currentColor"/></svg>
+          </button>
+          <button class="btn icon-btn" id="pauseBtn" title="一時停止" aria-label="一時停止" disabled>
+            <svg class="icon" viewBox="0 0 24 24" fill="none"><path d="M8 6h3v12H8zM13 6h3v12h-3z" fill="currentColor"/></svg>
+          </button>
+          <button class="btn icon-btn" id="resumeBtn" title="再開" aria-label="再開" disabled>
+            <svg class="icon" viewBox="0 0 24 24" fill="none"><path d="M8 6l10 6-10 6V6z" fill="currentColor"/></svg>
+          </button>
+          <button class="btn icon-btn danger" id="stopBtn" title="停止して記録" aria-label="停止して記録" disabled>
+            <svg class="icon" viewBox="0 0 24 24" fill="none"><path d="M7 7h10v10H7z" fill="currentColor"/></svg>
+          </button>
+          <button class="btn icon-btn" id="skipBreak" title="休憩をスキップ" aria-label="休憩をスキップ" disabled>
+            <svg class="icon" viewBox="0 0 24 24" fill="none"><path d="M5 6l7 6-7 6V6zM13 6h2v12h-2z" fill="currentColor"/></svg>
+          </button>
         </div>
       </div>
-      <div class="floaty card">
-        <h3 style="margin-top:0">ハイライト</h3>
-        <ul class="muted" style="margin:0; padding-left:18px">
-          <li>ダーク/ライト自動対応</li>
-          <li>1ファイル完結・画像なしで軽量</li>
-          <li>ボタンやカードなどUI部品つき</li>
-        </ul>
-      </div>
-    </div>
-  </section>
+      <p class="muted" style="margin:6px 0 0">※「停止して記録」は<strong>作業時間のみ</strong>を履歴に保存します（休憩は記録しません）。</p>
+    </section>
 
-  <!-- ==== Features ==== -->
-  <section id="features" class="container">
-    <h2 class="section-title">特徴</h2>
-    <p class="section-lead">必要十分な部品だけを用意。テキストを書き換えるだけで完成します。</p>
-    <div class="grid grid-3">
-      <div class="card">
-        <h3 style="margin-top:0">読みやすいデザイン</h3>
-        <p class="muted">余白・行間・配色を調整済み。長文でも疲れにくく、誰でも読みやすい。</p>
+    <!-- Logs & Stats -->
+    <section class="grid grid-2" style="margin-top:12px">
+      <div id="view-logs" data-view="logs" class="card" hidden>
+        <div class="row" style="justify-content:space-between">
+          <div class="row" style="gap:8px">
+            <button class="btn" id="exportBtn" title="CSVエクスポート" aria-label="CSVエクスポート">
+              <svg class="icon" viewBox="0 0 24 24" fill="none"><path d="M12 3v12m0 0l-3-3m3 3l3-3M5 18h14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <button class="btn danger" id="clearBtn" title="履歴を全消去" aria-label="履歴を全消去">
+              <svg class="icon" viewBox="0 0 24 24" fill="none"><path d="M6 7h12M9 7v10m6-10v10M8 7l1-2h6l1 2M6 7l1 12h10l1-12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+          </div>
+          <span class="muted" id="totals"></span>
+        </div>
+        <table id="logTable" aria-label="作業履歴">
+          <thead><tr><th>日時</th><th>カテゴリ</th><th class="right">作業時間</th></tr></thead>
+          <tbody></tbody>
+        </table>
       </div>
-      <div class="card">
-        <h3 style="margin-top:0">アクセントカラー</h3>
-        <p class="muted">ブランドカラーは <code>--brand</code> と <code>--brand-2</code> を編集するだけ。</p>
+
+      <div id="view-stats" data-view="stats" class="card" hidden>
+        <div class="row" style="justify-content:space-between;align-items:center">
+          <span class="muted">直近 <span id="rangeInfo">14</span> 日</span>
+          <label>表示範囲：
+            <select id="rangeSel" aria-label="表示範囲（日数）">
+              <option value="7">7</option>
+              <option value="14" selected>14</option>
+              <option value="30">30</option>
+            </select> 日
+          </label>
+        </div>
+        <canvas id="dailyChart" height="220" aria-label="日別合計（分）の棒グラフ"></canvas>
       </div>
-      <div class="card">
-        <h3 style="margin-top:0">スマホ最適化</h3>
-        <p class="muted">グリッドは自動で1→2→3列へ。ボタンも指で押しやすいサイズ。</p>
+    </section>
+
+    <!-- Customize -->
+    <section id="view-custom" data-view="custom" class="card" hidden>
+      <div class="row" style="align-items:flex-end">
+        <label>フォント：
+          <select id="fontSel">
+            <option value="sans">Noto Sans JP</option>
+            <option value="serif">Noto Serif JP</option>
+          </select>
+        </label>
+        <label>配色：
+          <select id="colorSel">
+            <option value="white">① 背景#FFFFFF / 文字#000000</option>
+            <option value="navyred">② 背景#162E3A / 文字#F52838</option>
+            <option value="sage">③ 背景#A6B5A5 / 文字#262724</option>
+          </select>
+        </label>
+        <button class="btn" id="resetTheme">初期に戻す</button>
       </div>
-    </div>
-  </section>
 
-  <!-- ==== Works / ギャラリー（テキストだけ） ==== -->
-  <section id="works" class="container">
-    <h2 class="section-title">作例/実績</h2>
-    <p class="section-lead">サムネ画像が無くてもカードで整然と見せられます。</p>
-    <div class="grid grid-3">
-      <div class="card"><strong>Project Alpha</strong><p class="muted">説明テキスト。リンクや成果のひとこと。</p></div>
-      <div class="card"><strong>Project Beta</strong><p class="muted">説明テキスト。リンクや成果のひとこと。</p></div>
-      <div class="card"><strong>Project Gamma</strong><p class="muted">説明テキスト。リンクや成果のひとこと。</p></div>
-    </div>
-  </section>
-
-  <!-- ==== Contact ==== -->
-  <section id="contact" class="container">
-    <h2 class="section-title">お問い合わせ</h2>
-    <p class="section-lead">SNSやメールへのリンクを置くだけでも十分です。</p>
-    <div class="card">
-      <p style="margin:0 0 12px">メール：<a href="mailto:your.name@example.com">your.name@example.com</a></p>
-      <div style="display:flex; gap:12px; flex-wrap:wrap">
-        <a class="btn" href="#" aria-label="X/Twitter">X / Twitter</a>
-        <a class="btn" href="#" aria-label="GitHub">GitHub</a>
-        <a class="btn" href="#" aria-label="Qiita">Qiita</a>
+      <div class="row" style="margin-top:12px">
+        <label>タイマー背景画像（40%表示）：
+          <input id="bgFile" type="file" accept="image/*">
+        </label>
+        <button class="btn danger" id="clearBg">背景を削除</button>
+        <span class="muted">※ 端末内に保存（localStorage）。</span>
       </div>
-    </div>
-  </section>
 
-  <!-- ==== Footer ==== -->
-  <footer>
-    <div class="container footer-inner">
-      <span class="muted">© <span id="y"></span> Your Name</span>
-      <a class="badge" href="#">トップへ戻る ↑</a>
-    </div>
-  </footer>
+      <div class="card" style="margin-top:12px">
+        <strong>プレビュー</strong>
+        <div class="timer-box" style="margin-top:10px">
+          <div class="timer-bg" id="timerBgPreview"></div>
+          <div class="timer" style="margin:0;padding:8px 0">00:00</div>
+        </div>
+      </div>
+    </section>
+  </div>
 
-  <script>
-    // 年号を自動更新
-    document.getElementById('y').textContent = new Date().getFullYear();
-  </script>
+<script>
+/* ===== Keys & helpers ===== */
+const KEY='pomodoro.logs.v1', CATKEY='pomodoro.cats.v1';
+const FONTKEY='pomodoro.font.v1', COLORKEY='pomodoro.color.v1';
+const BGKEY='pomodoro.bg.v1';
+const $=s=>document.querySelector(s), $$=s=>document.querySelectorAll(s);
+const pad=n=>String(n).padStart(2,'0');
+function load(k){ try{ return JSON.parse(localStorage.getItem(k)) }catch{ return null } }
+function save(k,v){ localStorage.setItem(k, JSON.stringify(v)) }
+function escapeHtml(s){return (s||'').replace(/[&<>"']/g,m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[m]))}
+
+/* ===== Fonts & Colors ===== */
+const FONTS = {
+  sans:'"Noto Sans JP",system-ui,-apple-system,"Segoe UI",Roboto,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif',
+  serif:'"Noto Serif JP",serif'
+};
+const COLORS = {
+  white:   { bg:'#FFFFFF', fg:'#000000', line:'#E5E7EB', card:'#FFFFFF' },
+  navyred: { bg:'#162E3A', fg:'#F52838', line:'#223844', card:'#1B3643' },
+  sage:    { bg:'#A6B5A5', fg:'#262724', line:'#CFD6CF', card:'#FFFFFF' }
+};
+
+/* ===== Appearance (配色②でフィールド強調) ===== */
+function applyAppearance(fontKey, colorKey){
+  const f = FONTS[fontKey] || FONTS.sans;
+  const c = COLORS[colorKey] || COLORS.white;
+  const r = document.documentElement.style;
+
+  r.setProperty('--font', f);
+  r.setProperty('--bg', c.bg);
+  r.setProperty('--fg', c.fg);     // タイマー＆アイコン色
+  r.setProperty('--line', c.line);
+  r.setProperty('--card', c.card);
+
+  const isNavy = (colorKey === 'navyred');
+  r.setProperty('--ui-fg', isNavy ? '#FFFFFF' : c.fg);
+
+  // 入力欄の配色
+  if (isNavy){
+    r.setProperty('--field-bg', '#0f1e26');   // 濃い面
+    r.setProperty('--field-fg', '#ffffff');   // 白文字
+    r.setProperty('--field-border', '#355560');
+    r.setProperty('--field-focus', '#68c6ff');
+  }else if(colorKey==='white'){
+    r.setProperty('--field-bg', '#ffffff');
+    r.setProperty('--field-fg', '#111827');
+    r.setProperty('--field-border', '#e5e7eb');
+    r.setProperty('--field-focus', '#7dd3fc');
+  }else{ // sage
+    r.setProperty('--field-bg', '#ffffff');
+    r.setProperty('--field-fg', c.fg);
+    r.setProperty('--field-border', '#cfd6cf');
+    r.setProperty('--field-focus', '#7dd3fc');
+  }
+
+  const muted = isNavy ? '#E6E6E6'
+                       : (colorKey==='white' ? '#5a6473'
+                                             : 'color-mix(in oklab, var(--fg) 70%, var(--bg) 30%)');
+  r.setProperty('--muted', muted);
+
+  $('#timerBgPreview').nextElementSibling.style.color = c.fg;
+  save(FONTKEY,fontKey); save(COLORKEY,colorKey);
+}
+function setTimerBg(dataUrl){
+  const el=$('#timerBg'), pv=$('#timerBgPreview');
+  if(dataUrl){ el.style.backgroundImage=`url('${dataUrl}')`; pv.style.backgroundImage=`url('${dataUrl}')`; }
+  else{ el.style.backgroundImage='none'; pv.style.backgroundImage='none'; }
+}
+
+/* ===== State ===== */
+let logs = load(KEY) || [];
+let categories = load(CATKEY) || ['学習','開発','家事','その他']; save(CATKEY,categories);
+
+let mode='idle', startAt=0, elapsedWork=0, remain=0, ticker=null;
+
+/* ===== Init ===== */
+function initUI(){
+  $('#category').innerHTML = categories.map(c=>`<option>${escapeHtml(c)}</option>`).join('');
+
+  const f = load(FONTKEY) || 'sans';
+  const col = load(COLORKEY) || 'white';
+  $('#fontSel').value=f; $('#colorSel').value=col; applyAppearance(f,col);
+
+  const savedBg = load(BGKEY); if(savedBg) setTimerBg(savedBg);
+
+  const wm=(+$('#workMin').value||25)*60*1000; updateDisplay(wm); updateStatus('停止中');
+  setTimerAppearance();
+  renderLogs(); drawDailyChart(); setupTabs();
+}
+function updateDisplay(ms){ const m=Math.floor(ms/60000), s=Math.floor((ms%60000)/1000); $('#display').textContent=`${pad(m)}:${pad(s)}` }
+function updateStatus(t){ $('#status').textContent=t }
+
+/* ===== Tabs ===== */
+function setupTabs(){
+  const show=(name)=>{
+    $$('[data-view]').forEach(v=>v.hidden=(v.dataset.view!==name));
+    $$('.tabs a').forEach(a=>a.classList.toggle('active',a.dataset.tab===name));
+    history.replaceState(null,'','#'+name);
+  };
+  const hash=(location.hash||'#timer').replace('#','');
+  show(['timer','logs','stats','custom'].includes(hash)?hash:'timer');
+  $$('.tabs a').forEach(a=>a.onclick=(e)=>{e.preventDefault();show(a.dataset.tab);});
+}
+
+/* ===== Appearance by mode ===== */
+function setTimerAppearance(){ $('#display').classList.toggle('is-break',mode==='break'); }
+
+/* ===== Timer (auto loop) ===== */
+function enableRunning(on){
+  $('#startBtn').disabled=on; $('#pauseBtn').disabled=!on; $('#stopBtn').disabled=!on;
+  $('#resumeBtn').disabled=true; $('#skipBreak').disabled=true;
+}
+function startTimer(){
+  if(mode!=='idle')return;
+  const wm=(+$('#workMin').value||25)*60*1000;
+  remain=wm; elapsedWork=0; startAt=Date.now(); mode='work';
+  setTimerAppearance(); enableRunning(true); updateStatus('作業中'); tick();
+}
+function pauseTimer(){
+  if(mode!=='work')return;
+  mode='paused'; elapsedWork+=Date.now()-startAt;
+  clearInterval(ticker); $('#pauseBtn').disabled=true; $('#resumeBtn').disabled=false; updateStatus('一時停止');
+}
+function resumeTimer(){
+  if(mode!=='paused')return;
+  mode='work'; startAt=Date.now();
+  $('#pauseBtn').disabled=false; $('#resumeBtn').disabled=true; updateStatus('作業中'); tick();
+}
+function stopAndLog(){
+  let workMs=elapsedWork; if(mode==='work') workMs+=Date.now()-startAt;
+  if(workMs>=1000){ logs.unshift({at:Date.now(),category:$('#category').value,ms:workMs}); save(KEY,logs); }
+  resetAll(); renderLogs(); drawDailyChart();
+}
+function toBreak(){
+  const bm=(+$('#breakMin').value||5)*60*1000;
+  remain=bm; startAt=Date.now(); mode='break';
+  setTimerAppearance(); updateStatus('休憩中');
+  $('#pauseBtn').disabled=true; $('#resumeBtn').disabled=true; $('#skipBreak').disabled=false; tick();
+}
+function toWork(){
+  const wm=(+$('#workMin').value||25)*60*1000;
+  remain=wm; startAt=Date.now(); mode='work';
+  setTimerAppearance(); updateStatus('作業中');
+  $('#pauseBtn').disabled=false; $('#resumeBtn').disabled=true; $('#skipBreak').disabled=true; tick();
+}
+function resetAll(){
+  clearInterval(ticker); ticker=null; mode='idle'; remain=0; elapsedWork=0;
+  setTimerAppearance();
+  $('#pauseBtn').disabled=true; $('#resumeBtn').disabled=true; $('#stopBtn').disabled=true; $('#skipBreak').disabled=true; $('#startBtn').disabled=false;
+  const wm=(+$('#workMin').value||25)*60*1000; updateDisplay(wm); updateStatus('停止中');
+}
+function tick(){
+  clearInterval(ticker);
+  ticker=setInterval(()=>{
+    const left=Math.max(0,remain-(Date.now()-startAt));
+    updateDisplay(left);
+    if(left<=0){
+      clearInterval(ticker); ticker=null;
+      if(mode==='work'){ elapsedWork+=remain; toBreak(); beep(); }
+      else if(mode==='break'){ toWork(); beep(); }
+    }
+  },250);
+}
+
+/* ===== Category add ===== */
+$('#addCat').onclick=()=>{
+  const v=$('#newCat').value.trim(); if(!v) return;
+  if(!categories.includes(v)){
+    categories.push(v); save(CATKEY,categories);
+    $('#category').innerHTML=categories.map(c=>`<option ${c===v?'selected':''}>${escapeHtml(c)}</option>`).join('');
+  }else{ $('#category').value=v; }
+  $('#newCat').value='';
+};
+
+/* ===== Logs ===== */
+function fmtMin(ms){ return `${Math.round(ms/60000)}分` }
+function renderLogs(){
+  const tb=$('#logTable tbody'); tb.innerHTML=''; let byCat={};
+  for(const x of logs){
+    byCat[x.category]=(byCat[x.category]||0)+x.ms;
+    const tr=document.createElement('tr'); const d=new Date(x.at);
+    tr.innerHTML=`<td>${d.toLocaleString()}</td><td>${escapeHtml(x.category)}</td><td class="right">${fmtMin(x.ms)}</td>`;
+    tb.appendChild(tr);
+  }
+  const pairs=Object.entries(byCat).map(([k,v])=>`${k}:${fmtMin(v)}`).join(' ／ ');
+  $('#totals').textContent=pairs?`カテゴリ別合計 → ${pairs}`:'まだ記録はありません';
+}
+$('#exportBtn').onclick=()=>{ const head='datetime,category,minutes\n'; const rows=logs.map(x=>`${new Date(x.at).toISOString()},${String(x.category).replaceAll(',',' ')},${Math.round(x.ms/60000)}`).join('\n'); const blob=new Blob([head+rows],{type:'text/csv'}); const a=Object.assign(document.createElement('a'),{href:URL.createObjectURL(blob),download:'pomodoro_logs.csv'}); a.click(); URL.revokeObjectURL(a.href); };
+$('#clearBtn').onclick=()=>{ if(confirm('履歴をすべて削除しますか？')){ logs=[]; save(KEY,logs); renderLogs(); drawDailyChart(); } };
+
+/* ===== Chart (pure canvas) ===== */
+let chartRange=14; const dpr=window.devicePixelRatio||1;
+function drawDailyChart(){
+  const cvs=document.getElementById('dailyChart'); if(!cvs) return;
+  const ctx=cvs.getContext('2d');
+  const cssW=cvs.clientWidth||600, cssH=parseInt(cvs.getAttribute('height'))||220;
+  cvs.width=Math.round(cssW*dpr); cvs.height=Math.round(cssH*dpr); ctx.setTransform(dpr,0,0,dpr,0,0);
+
+  const today=new Date(); today.setHours(0,0,0,0);
+  const labels=[]; for(let i=chartRange-1;i>=0;i--){ const d=new Date(today); d.setDate(today.getDate()-i); labels.push(`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`); }
+  const perDay=Object.fromEntries(labels.map(k=>[k,0]));
+  for(const x of logs){ const d=new Date(x.at); const k=`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; if(k in perDay) perDay[k]+=Math.round(x.ms/60000); }
+  const values=labels.map(k=>perDay[k]); const maxV=Math.max(60,...values);
+
+  const P={l:40,r:12,t:16,b:26}, W=cssW-P.l-P.r, H=cssH-P.t-P.b;
+  ctx.clearRect(0,0,cssW,cssH);
+  ctx.strokeStyle='rgba(120,130,150,.28)'; ctx.lineWidth=1;
+  ctx.font='12px system-ui,-apple-system,Segoe UI,Roboto,sans-serif';
+  ctx.fillStyle=getComputedStyle(document.body).getPropertyValue('--muted')||'#6b7280';
+  for(let i=0;i<=5;i++){ const y=P.t+H*(i/5); const v=Math.round(maxV*(1-i/5)); ctx.beginPath(); ctx.moveTo(P.l,y); ctx.lineTo(P.l+W,y); ctx.stroke(); ctx.fillText(String(v),8,y+4); }
+
+  const gap=4, barW=Math.max(4,(W-gap*(labels.length-1))/labels.length);
+  const brand=getComputedStyle(document.body).getPropertyValue('--brand')||'#5cc9ee';
+  const brand2=getComputedStyle(document.body).getPropertyValue('--brand2')||'#9aa7ff';
+
+  for(let i=0;i<labels.length;i++){
+    const x=P.l+i*(barW+gap); const h=(values[i]/maxV)*H; const y=P.t+(H-h);
+    const grad=ctx.createLinearGradient(0,y,0,y+h); grad.addColorStop(0,brand.trim()); grad.addColorStop(1,brand2.trim());
+    ctx.fillStyle=grad; ctx.fillRect(x,y,barW,h);
+    if(labels.length<=14 ? i%2===0 : i%5===0){ const lab=labels[i].slice(5); ctx.fillStyle=getComputedStyle(document.body).getPropertyValue('--muted')||'#6b7280'; ctx.fillText(lab,x,P.t+H+14); }
+  }
+  const sum=values.reduce((a,b)=>a+b,0); ctx.fillStyle=getComputedStyle(document.body).getPropertyValue('--muted')||'#6b7280'; ctx.fillText(`計 ${sum} 分`, cssW-80, P.t+12);
+}
+document.getElementById('rangeSel')?.addEventListener('change', e=>{ chartRange=parseInt(e.target.value,10)||14; document.getElementById('rangeInfo').textContent=chartRange; drawDailyChart(); });
+
+/* ===== Customize ===== */
+$('#fontSel').onchange=(e)=>applyAppearance(e.target.value,$('#colorSel').value);
+$('#colorSel').onchange=(e)=>applyAppearance($('#fontSel').value,e.target.value);
+$('#resetTheme').onclick=()=>{ $('#fontSel').value='sans'; $('#colorSel').value='white'; applyAppearance('sans','white'); };
+
+$('#bgFile').onchange=(e)=>{
+  const f=e.target.files?.[0]; if(!f) return;
+  const reader=new FileReader();
+  reader.onload=()=>{ const dataUrl=reader.result; setTimerBg(dataUrl); save(BGKEY,dataUrl); };
+  reader.readAsDataURL(f);
+};
+$('#clearBg').onclick=()=>{ setTimerBg(null); localStorage.removeItem(BGKEY); };
+
+/* ===== Sound ===== */
+function beep(){ try{ const a=new (window.AudioContext||window.webkitAudioContext)(); const o=a.createOscillator(), g=a.createGain(); o.connect(g); g.connect(a.destination); o.type='sine'; o.frequency.value=880; g.gain.setValueAtTime(0.05,a.currentTime); o.start(); setTimeout(()=>{ o.stop(); a.close(); },250);}catch{} }
+
+/* ===== Timer control ===== */
+$('#startBtn').onclick=startTimer; $('#pauseBtn').onclick=pauseTimer; $('#resumeBtn').onclick=resumeTimer;
+$('#stopBtn').onclick=stopAndLog; $('#skipBreak').onclick=()=>{ if(mode==='break') toWork(); };
+$('#workMin').oninput=()=>{ if(mode==='idle'){ updateDisplay((+$('#workMin').value||25)*60*1000) } };
+
+initUI();
+</script>
 </body>
 </html>
-
-/* ===== 見やすさ改善の上書き ===== */
-
-/* 1) 背景の“もや”を弱めて本文を最優先に */
-body{
-  background: var(--bg);            /* 派手なradialは一旦オフ */
-}
-/* 背景の装飾を入れる場合はヒーローの裏側だけに */
-.hero{
-  position: relative;
-  isolation: isolate;
-}
-.hero::before{
-  content:"";
-  position:absolute; inset:-80px -40px auto -40px; height:260px;
-  background: radial-gradient(60% 80% at 10% 0%, rgba(120,130,150,.18), transparent 70%);
-  z-index: -1;                       /* テキストより背面に */
-  filter: blur(2px);
-}
-
-/* 2) ヒーロー見出しのコントラストを確保（薄すぎるのを改善） */
-.title{
-  color:#0b1020;                     /* フォールバックで濃い文字色 */
-  background: linear-gradient(135deg,#0b1020 20%, #334155 60%, #0b1020);
-  -webkit-background-clip: text; background-clip: text; color: transparent;
-}
-@media (prefers-color-scheme: dark){
-  .title{
-    background: linear-gradient(135deg,#ffffff 15%, #dbeafe 55%, #ffffff);
-  }
-}
-
-/* 3) ベースの余白・最大幅を少し広げて窮屈さを解消 */
-.container, .wrap{ max-width: 1120px; padding-inline: 24px; }
-.hero{ padding: 72px 24px 32px; }
-.section-title{ margin-top: 8px; }
-
-/* 4) カードのコントラストを上げ、影は控えめに */
-.card{
-  background: var(--card);
-  border: 1px solid var(--outline);
-  box-shadow: 0 8px 24px rgba(0,0,0,.08);
-}
-@media (prefers-color-scheme: light){
-  .card{ box-shadow: 0 10px 22px rgba(20,30,60,.08); }
-}
-
-/* 5) 箇条書きの視認性（行間とドット間隔） */
-.card ul{ line-height: 1.7; padding-left: 1.2rem; }
-.card li{ margin-bottom: .25rem; }
-
-/* 6) ボタンの高さと間隔を統一 */
-.btn{ min-height: 44px; padding: .75rem 1.1rem; }
-.btn + .btn{ margin-left: 8px; }
-
-/* 7) 見出しと本文のサイズ感（スマホでの視認性） */
-h1,h2,h3{ line-height: 1.25; }
-.title{ font-size: clamp(28px, 5vw, 44px); }
-.section-title{ font-size: clamp(20px, 2.4vw, 28px); }
-
-/* 8) 余白の整頓：セクション間を一定に */
-section{ margin-block: 18px; }
-#features, #works, #contact{ margin-top: 28px; }
-
-/* 9) 動きが苦手な人への配慮（ふわっと演出をOFF） */
-@media (prefers-reduced-motion: reduce){
-  .floaty, .fadein{ animation: none !important; }
-  .btn{ transition: none !important; }
-}
-
