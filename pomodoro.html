@@ -14,6 +14,9 @@
     --radius:12px; --shadow:0 8px 18px rgba(20,30,60,.06);
     --wrap:1000px; --btnh:44px;
     --font: system-ui,-apple-system,"Segoe UI",Roboto,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif;
+
+    /* 追加：タイマー枠の高さ（画面幅に応じて可変） */
+    --timer-box-h: clamp(220px, 36vw, 360px);
   }
   @media (prefers-color-scheme: dark){
     :root{ --bg:#0b0c10; --fg:#eef2f4; --muted:#9aa5ad; --card:#131720; --line:#232b36; --shadow:0 10px 22px rgba(0,0,0,.18) }
@@ -46,13 +49,31 @@
   .danger{border-color:#ff6b6b}
 
   /* Timer area */
-  .timer-wrap{display:flex;flex-direction:column;align-items:center;padding:56px 8px 18px} /* 上余白さらに拡大 */
-  .timer-box{position:relative; width:min(92vw,780px); border-radius:18px; overflow:hidden}
+  .timer-wrap{display:flex;flex-direction:column;align-items:center;padding:56px 8px 18px}
+  /* 置き換え：縦幅と余白を拡大 */
+  .timer-box{
+    position:relative;
+    width:min(92vw, 780px);
+    height:var(--timer-box-h);      /* 高さを明示（可変） */
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    border-radius:18px;
+    overflow:hidden;
+    margin:20px 0 32px;             /* 下の余白を増やす（画像とボタンの間） */
+  }
   .timer-bg{position:absolute; inset:0; background-size:cover; background-position:center; opacity:.4; pointer-events:none; filter:saturate(.9) blur(.3px)}
-  .timer{position:relative; font-weight:800; font-size:clamp(72px,14vw,140px); letter-spacing:.04em; text-align:center; margin:0 0 24px}
-  .timer.is-break{opacity:.25; filter:grayscale(.35) saturate(.5)} /* 休憩はもっと薄く */
+  .timer{position:relative; font-weight:800; font-size:clamp(72px,14vw,140px); letter-spacing:.04em; text-align:center; margin:0}
+  .timer.is-break{opacity:.25; filter:grayscale(.35) saturate(.5)} /* 休憩はさらに薄く */
 
-  .btn-row{display:flex;gap:12px;justify-content:center; margin-bottom:26px;} /* ボタン下にさらに余白 */
+  /* 置き換え：ボタン列の上下余白を拡大 */
+  .btn-row{
+    display:flex;
+    gap:14px;
+    justify-content:center;
+    margin-top:22px;    /* 画像の下に余白 */
+    margin-bottom:28px; /* 下にも余白 */
+  }
   .icon-btn{width:56px;height:56px;border-radius:14px}
   .icon{width:22px;height:22px}
 
@@ -108,7 +129,7 @@
         </label>
       </div>
 
-      <!-- 大きなタイマー + 画像背景(40%) + アイコンボタン -->
+      <!-- Timer with background image -->
       <div class="timer-wrap">
         <div class="timer-box">
           <div class="timer-bg" id="timerBg"></div>
@@ -211,7 +232,7 @@ function load(k){ try{ return JSON.parse(localStorage.getItem(k)) }catch{ return
 function save(k,v){ localStorage.setItem(k, JSON.stringify(v)) }
 function escapeHtml(s){return (s||'').replace(/[&<>"']/g,m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[m]))}
 
-/* ==== themes (モード: 色+フォント) ==== */
+/* ==== themes ==== */
 const THEMES = {
   calm:   { bg:'#f7f8fb', fg:'#0b1020', line:'#e6eaf1', card:'#ffffff', brand:'#5cc9ee', brand2:'#9aa7ff',
             font:'system-ui,-apple-system,"Segoe UI",Roboto,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif' },
@@ -228,7 +249,6 @@ function applyTheme(name){
   r.setProperty('--brand', t.brand); r.setProperty('--brand2', t.brand2);
   r.setProperty('--font', t.font);
   save(THEMEKEY, name);
-  // プレビュー側の文字色も見やすく
   $('#timerBgPreview').nextElementSibling.style.color = t.fg;
 }
 
@@ -247,11 +267,8 @@ let mode='idle', startAt=0, elapsedWork=0, remain=0, ticker=null;
 
 /* ==== init ==== */
 function initUI(){
-  // categories
   $('#category').innerHTML = categories.map(c=>`<option>${escapeHtml(c)}</option>`).join('');
-  // theme
   const savedTheme = load(THEMEKEY) || 'calm'; $('#modeSel').value = savedTheme; applyTheme(savedTheme);
-  // bg image
   const savedBg = load(BGKEY); if(savedBg) setTimerBg(savedBg);
 
   const wm=(+$('#workMin').value||25)*60*1000; updateDisplay(wm); updateStatus('停止中');
@@ -275,10 +292,10 @@ function setupTabs(){
 
 /* ==== appearance by mode ==== */
 function setTimerAppearance(){
-  $('#display').classList.toggle('is-break', mode==='break'); // 休憩は薄く
+  $('#display').classList.toggle('is-break', mode==='break');
 }
 
-/* ==== timer ==== */
+/* ==== timer (作業↔休憩 自動ループ) ==== */
 function enableRunning(on){
   $('#startBtn').disabled=on; $('#pauseBtn').disabled=!on; $('#stopBtn').disabled=!on;
   $('#resumeBtn').disabled=true; $('#skipBreak').disabled=true;
@@ -308,16 +325,14 @@ function stopAndLog(){
 function toBreak(){
   const bm=(+$('#breakMin').value||5)*60*1000;
   remain=bm; startAt=Date.now(); mode='break';
-  setTimerAppearance();
-  updateStatus('休憩中');
+  setTimerAppearance(); updateStatus('休憩中');
   $('#pauseBtn').disabled=true; $('#resumeBtn').disabled=true; $('#skipBreak').disabled=false;
   tick();
 }
-function toWork(){ // 休憩→作業（自動ループ）
+function toWork(){
   const wm=(+$('#workMin').value||25)*60*1000;
   remain=wm; startAt=Date.now(); mode='work';
-  setTimerAppearance();
-  updateStatus('作業中');
+  setTimerAppearance(); updateStatus('作業中');
   $('#pauseBtn').disabled=false; $('#resumeBtn').disabled=true; $('#skipBreak').disabled=true;
   tick();
 }
@@ -334,12 +349,8 @@ function tick(){
     updateDisplay(left);
     if(left<=0){
       clearInterval(ticker); ticker=null;
-      if(mode==='work'){             // 作業 → 自動で休憩へ
-        elapsedWork+=remain;
-        toBreak(); beep();
-      }else if(mode==='break'){      // 休憩 → 自動で作業へ（ループ）
-        toWork(); beep();
-      }
+      if(mode==='work'){ elapsedWork+=remain; toBreak(); beep(); }
+      else if(mode==='break'){ toWork(); beep(); }
     }
   },250);
 }
@@ -413,11 +424,11 @@ document.getElementById('rangeSel')?.addEventListener('change', e=>{ chartRange=
 $('#modeSel').onchange = (e)=> applyTheme(e.target.value);
 $('#resetTheme').onclick = ()=>{ $('#modeSel').value='calm'; applyTheme('calm'); };
 
-$('#bgFile').onchange = async (e)=>{
+$('#bgFile').onchange = (e)=>{
   const f = e.target.files?.[0]; if(!f) return;
   const reader = new FileReader();
   reader.onload = ()=>{ const dataUrl = reader.result; setTimerBg(dataUrl); save(BGKEY, dataUrl); };
-  reader.readAsDataURL(f); // localStorageに保持（サイズが大きいと保存不可の場合あり）
+  reader.readAsDataURL(f);
 };
 $('#clearBg').onclick = ()=>{ setTimerBg(null); localStorage.removeItem(BGKEY); };
 
@@ -426,7 +437,7 @@ function beep(){ try{ const a=new (window.AudioContext||window.webkitAudioContex
 
 /* ==== start/pause/resume/stop ==== */
 $('#startBtn').onclick=startTimer; $('#pauseBtn').onclick=pauseTimer; $('#resumeBtn').onclick=resumeTimer;
-$('#stopBtn').onclick=stopAndLog; $('#skipBreak').onclick=()=>{ if(mode==='break') toWork(); }; // 休憩をスキップ→作業へ
+$('#stopBtn').onclick=stopAndLog; $('#skipBreak').onclick=()=>{ if(mode==='break') toWork(); };
 $('#workMin').oninput=()=>{ if(mode==='idle'){ updateDisplay((+$('#workMin').value||25)*60*1000) } };
 
 initUI();
