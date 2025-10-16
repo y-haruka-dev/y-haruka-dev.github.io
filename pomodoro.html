@@ -39,9 +39,10 @@
   .primary{background:linear-gradient(135deg,var(--brand),var(--brand2));color:#081018;border:none;font-weight:700}
   .danger{border-color:#ff6b6b}
   /* timer */
-  .timer-wrap{display:flex;flex-direction:column;align-items:center;padding:28px 8px}
-  .timer{font-weight:800;font-size:clamp(56px,12vw,120px);letter-spacing:.04em;text-align:center;margin:10px 0 18px}
-  .btn-row{display:flex;gap:12px;justify-content:center}
+  .timer-wrap{display:flex;flex-direction:column;align-items:center;padding:52px 8px 14px} /* 上の余白を拡大 */
+  .timer{font-weight:800;font-size:clamp(64px,13vw,128px);letter-spacing:.04em;text-align:center;margin:8px 0 22px}
+  .timer.is-break{opacity:.6; filter:saturate(.7)} /* 休憩モードで色を薄く */
+  .btn-row{display:flex;gap:12px;justify-content:center; margin-bottom:22px;} /* ボタン下に余白 */
   .icon-btn{width:56px;height:56px;border-radius:14px}
   .icon{width:22px;height:22px}
   /* table & canvas */
@@ -72,7 +73,6 @@
 
     <!-- view: timer -->
     <section id="view-timer" data-view="timer" class="card">
-      <!-- タイトルは削除（非表示）。カテゴリ入力＆設定 -->
       <div class="row" role="group" aria-label="基本設定">
         <label>カテゴリ：
           <select id="category" aria-label="カテゴリ"></select>
@@ -115,10 +115,9 @@
       <p class="muted" style="margin:6px 0 0">※「停止して記録」は<strong>作業時間のみ</strong>を履歴に保存します（休憩は記録しません）。</p>
     </section>
 
-    <!-- view: logs & stats（2カラム／600px未満で1カラム） -->
+    <!-- view: logs & stats -->
     <section class="grid grid-2" style="margin-top:12px">
       <div id="view-logs" data-view="logs" class="card" hidden>
-        <!-- 見出しテキストを削除（非表示） -->
         <div class="row" style="justify-content:space-between">
           <div class="row" style="gap:8px">
             <button class="btn" id="exportBtn" title="CSVエクスポート" aria-label="CSVエクスポート">
@@ -137,7 +136,6 @@
       </div>
 
       <div id="view-stats" data-view="stats" class="card" hidden>
-        <!-- 見出しテキストを削除（非表示） -->
         <div class="row" style="justify-content:space-between;align-items:center">
           <span class="muted">直近 <span id="rangeInfo">14</span> 日</span>
           <label>表示範囲：
@@ -173,23 +171,28 @@ function initUI(){
   const sel=$('#category');
   sel.innerHTML = categories.map(c=>`<option>${escapeHtml(c)}</option>`).join('');
   const wm=(+$('#workMin').value||25)*60*1000; updateDisplay(wm); updateStatus('停止中');
+  setTimerAppearance(); // 見た目の初期化
   renderLogs(); drawDailyChart(); setupTabs();
 }
 function updateDisplay(ms){ const m=Math.floor(ms/60000), s=Math.floor((ms%60000)/1000); $('#display').textContent=`${pad(m)}:${pad(s)}` }
 function updateStatus(t){ $('#status').textContent=t }
 
-/* ==== tabs (表示を切替) ==== */
+/* ==== tabs ==== */
 function setupTabs(){
   const show = (name)=>{
     $$('[data-view]').forEach(v=>v.hidden = (v.dataset.view!==name));
     $$('.tabs a').forEach(a=>a.classList.toggle('active', a.dataset.tab===name));
     history.replaceState(null,'', '#'+name);
   };
-  // 初期表示
   const hash = (location.hash||'#timer').replace('#','');
   show(['timer','logs','stats'].includes(hash)?hash:'timer');
-  // クリック
   $$('.tabs a').forEach(a=>a.onclick=(e)=>{ e.preventDefault(); show(a.dataset.tab); });
+}
+
+/* ==== appearance by mode ==== */
+function setTimerAppearance(){
+  const t = $('#display');
+  t.classList.toggle('is-break', mode==='break'); // 休憩中は薄く
 }
 
 /* ==== timer ==== */
@@ -201,22 +204,38 @@ function startTimer(){
   if(mode!=='idle') return;
   const wm=(+$('#workMin').value||25)*60*1000;
   remain=wm; elapsedWork=0; startAt=Date.now(); mode='work';
+  setTimerAppearance();
   enableRunning(true); updateStatus('作業中'); tick();
 }
-function pauseTimer(){ if(mode!=='work')return; mode='paused'; elapsedWork+=Date.now()-startAt; clearInterval(ticker); $('#pauseBtn').disabled=true; $('#resumeBtn').disabled=false; updateStatus('一時停止'); }
-function resumeTimer(){ if(mode!=='paused')return; mode='work'; startAt=Date.now(); $('#pauseBtn').disabled=false; $('#resumeBtn').disabled=true; updateStatus('作業中'); tick(); }
+function pauseTimer(){
+  if(mode!=='work')return;
+  mode='paused'; elapsedWork+=Date.now()-startAt;
+  clearInterval(ticker); $('#pauseBtn').disabled=true; $('#resumeBtn').disabled=false; updateStatus('一時停止');
+}
+function resumeTimer(){
+  if(mode!=='paused')return;
+  mode='work'; startAt=Date.now();
+  $('#pauseBtn').disabled=false; $('#resumeBtn').disabled=true; updateStatus('作業中'); tick();
+}
 function stopAndLog(){
   let workMs=elapsedWork; if(mode==='work') workMs+=Date.now()-startAt;
   if(workMs>=1000){ logs.unshift({at:Date.now(), category:$('#category').value, ms:workMs}); save(KEY,logs); }
   resetAll(); renderLogs(); drawDailyChart();
 }
 function toBreak(){
-  const bm=(+$('#breakMin').value||5)*60*1000; remain=bm; startAt=Date.now(); mode='break';
-  updateStatus('休憩中'); $('#pauseBtn').disabled=true; $('#resumeBtn').disabled=true; $('#skipBreak').disabled=false; tick();
+  const bm=(+$('#breakMin').value||5)*60*1000;
+  remain=bm; startAt=Date.now(); mode='break';
+  setTimerAppearance();                 // ★ 休憩見た目
+  updateStatus('休憩中');
+  $('#pauseBtn').disabled=true; $('#resumeBtn').disabled=true; $('#skipBreak').disabled=false;
+  tick();
 }
-function resetAll(){ clearInterval(ticker); ticker=null; mode='idle'; remain=0; elapsedWork=0;
+function resetAll(){
+  clearInterval(ticker); ticker=null; mode='idle'; remain=0; elapsedWork=0;
+  setTimerAppearance();
   $('#pauseBtn').disabled=true; $('#resumeBtn').disabled=true; $('#stopBtn').disabled=true; $('#skipBreak').disabled=true; $('#startBtn').disabled=false;
-  const wm=(+$('#workMin').value||25)*60*1000; updateDisplay(wm); updateStatus('停止中'); }
+  const wm=(+$('#workMin').value||25)*60*1000; updateDisplay(wm); updateStatus('停止中');
+}
 function tick(){
   clearInterval(ticker);
   ticker=setInterval(()=>{
@@ -224,19 +243,24 @@ function tick(){
     updateDisplay(left);
     if(left<=0){
       clearInterval(ticker); ticker=null;
-      if(mode==='work'){ elapsedWork+=remain; toBreak(); beep(); }
-      else if(mode==='break'){ resetAll(); beep(); }
+      if(mode==='work'){                 // ★ 作業終了 → 自動で休憩へ
+        elapsedWork+=remain;
+        toBreak();
+        beep();
+      }else if(mode==='break'){
+        resetAll();
+        beep();
+      }
     }
   },250);
 }
 
-/* ==== category add (修正) ==== */
+/* ==== category add ==== */
 $('#addCat').onclick=()=>{
   const v=$('#newCat').value.trim();
   if(!v) return;
   if(!categories.includes(v)){
     categories.push(v); save(CATKEY,categories);
-    // セレクトを更新して新カテゴリを選択状態に
     const sel=$('#category'); sel.innerHTML = categories.map(c=>`<option ${c===v?'selected':''}>${escapeHtml(c)}</option>`).join('');
   }else{
     $('#category').value = v;
