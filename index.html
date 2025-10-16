@@ -14,12 +14,15 @@
     --brand:#5cc9ee; --brand2:#9aa7ff;
     --radius:12px; --shadow:0 8px 18px rgba(20,30,60,.06);
     --wrap:1000px; --btnh:44px;
-    --font:"Noto Sans JP",system-ui,-apple-system,"Segoe UI",Roboto,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif;
 
-    --ui-fg:var(--fg);                /* 通常テキスト色（配色②で白に切替） */
+    /* UI全体とタイマー専用フォント */
+    --font:"Noto Sans JP",system-ui,-apple-system,"Segoe UI",Roboto,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif;
+    --font-timer:"Noto Sans JP",system-ui,-apple-system,"Segoe UI",Roboto,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif;
+
+    --ui-fg:var(--fg);
     --timer-box-h:clamp(220px,36vw,360px);
 
-    /* 入力欄（フィールド）用の色トークン */
+    /* 入力欄の色 */
     --field-bg:#ffffff;
     --field-fg:var(--ui-fg);
     --field-border:#e5e7eb;
@@ -45,7 +48,7 @@
   .tabs a{display:inline-flex;gap:6px;align-items:center;padding:.45rem .7rem;border-radius:10px;border:1px solid transparent}
   .tabs a.active{border-color:var(--line);background:linear-gradient(180deg,rgba(255,255,255,.05),transparent)}
 
-  /* Inputs / Selects / Buttons —— コントラスト強化版 */
+  /* Inputs / Selects / Buttons */
   select,input,button{
     height:var(--btnh);
     padding:.6rem .8rem;
@@ -57,8 +60,7 @@
   select{appearance:none;background-clip:padding-box}
   input::placeholder{color:color-mix(in oklab,var(--field-fg) 70%,var(--field-bg) 30%)}
   select:focus,input:focus,button:focus{
-    outline:none;
-    border-color:var(--field-focus);
+    outline:none;border-color:var(--field-focus);
     box-shadow:0 0 0 3px color-mix(in oklab,var(--field-focus) 35%,transparent);
   }
   .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;cursor:pointer}
@@ -72,7 +74,11 @@
     display:flex;align-items:center;justify-content:center;border-radius:18px;overflow:hidden;margin:20px 0 32px;
   }
   .timer-bg{position:absolute;inset:0;background-size:cover;background-position:center;opacity:.4;pointer-events:none;filter:saturate(.9) blur(.3px)}
-  .timer{position:relative;font-weight:800;font-size:clamp(72px,14vw,140px);letter-spacing:.04em;text-align:center;margin:0;color:var(--fg)}
+  .timer{
+    position:relative;font-weight:800;font-size:clamp(72px,14vw,140px);
+    letter-spacing:.04em;text-align:center;margin:0;color:var(--fg);
+    font-family:var(--font-timer); /* ← タイマーだけ常に Noto Sans */
+  }
   .timer.is-break{opacity:.25;filter:grayscale(.35) saturate(.5)}
   .btn-row{display:flex;gap:14px;justify-content:center;margin-top:22px;margin-bottom:28px}
   .icon-btn{width:56px;height:56px;border-radius:14px;color:var(--fg)}
@@ -242,13 +248,18 @@ const COLORS = {
   sage:    { bg:'#A6B5A5', fg:'#262724', line:'#CFD6CF', card:'#FFFFFF' }
 };
 
-/* ===== Appearance (配色②でフィールド強調) ===== */
+/* ===== Appearance ===== */
 function applyAppearance(fontKey, colorKey){
-  const f = FONTS[fontKey] || FONTS.sans;
   const c = COLORS[colorKey] || COLORS.white;
   const r = document.documentElement.style;
 
-  r.setProperty('--font', f);
+  // UI全体のフォントは選択に従う
+  r.setProperty('--font', fontKey === 'serif' ? FONTS.serif : FONTS.sans);
+
+  // タイマー専用フォントは常に Noto Sans
+  r.setProperty('--font-timer', FONTS.sans);
+
+  // 配色
   r.setProperty('--bg', c.bg);
   r.setProperty('--fg', c.fg);     // タイマー＆アイコン色
   r.setProperty('--line', c.line);
@@ -259,8 +270,8 @@ function applyAppearance(fontKey, colorKey){
 
   // 入力欄の配色
   if (isNavy){
-    r.setProperty('--field-bg', '#0f1e26');   // 濃い面
-    r.setProperty('--field-fg', '#ffffff');   // 白文字
+    r.setProperty('--field-bg', '#0f1e26');
+    r.setProperty('--field-fg', '#ffffff');
     r.setProperty('--field-border', '#355560');
     r.setProperty('--field-focus', '#68c6ff');
   }else if(colorKey==='white'){
@@ -281,7 +292,8 @@ function applyAppearance(fontKey, colorKey){
   r.setProperty('--muted', muted);
 
   $('#timerBgPreview').nextElementSibling.style.color = c.fg;
-  save(FONTKEY,fontKey); save(COLORKEY,colorKey);
+
+  save(FONTKEY, fontKey); save(COLORKEY, colorKey);
 }
 function setTimerBg(dataUrl){
   const el=$('#timerBg'), pv=$('#timerBgPreview');
