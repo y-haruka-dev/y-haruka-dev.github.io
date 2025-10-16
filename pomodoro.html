@@ -1,0 +1,290 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>ポモドーロタイマー</title>
+<meta name="description" content="カテゴリを選んでスタート、停止で時間を自動記録するポモドーロタイマー。">
+<style>
+  :root{--bg:#0b0c10;--fg:#eef2f4;--muted:#9aa5ad;--card:#131720;--line:#232b36;--brand:#7dd3fc;--brand2:#a78bfa}
+  @media (prefers-color-scheme: light){:root{--bg:#f6f8fb;--fg:#0b1020;--muted:#5a6473;--card:#fff;--line:#e6eaf1}}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);font-family:system-ui,-apple-system,Segoe UI,Roboto,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif;line-height:1.6}
+  a{color:inherit;text-decoration:none}
+  .wrap{max-width:900px;margin:auto;padding:18px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px}
+  h1{margin:.4rem 0 1rem}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  select,input,button{padding:.6rem .8rem;border:1px solid var(--line);border-radius:10px;background:transparent;color:inherit}
+  button{cursor:pointer}
+  .primary{background:linear-gradient(135deg,var(--brand),var(--brand2));color:#081018;border:none;font-weight:700}
+  .danger{border-color:#ff6b6b}
+  .timer{font-weight:800; font-size:clamp(36px,8vw,72px); text-align:center; margin:10px 0}
+  .pill{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:999px;padding:.25rem .6rem;color:var(--muted)}
+  table{width:100%;border-collapse:collapse;margin-top:10px;font-size:15px}
+  th,td{border-bottom:1px solid var(--line);padding:.5rem .4rem;text-align:left}
+  tfoot td{font-weight:700}
+  .right{text-align:right}
+  .muted{color:var(--muted)}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="row" style="justify-content:space-between">
+      <div class="row" style="gap:8px">
+        <strong>🍅 ポモドーロ</strong>
+        <span class="pill" id="status">停止中</span>
+      </div>
+      <a class="pill" href="./">← トップへ</a>
+    </header>
+
+    <section class="card">
+      <h1>カテゴリを選んでスタート</h1>
+      <div class="row">
+        <label>カテゴリ：
+          <select id="category"></select>
+        </label>
+        <input id="newCat" placeholder="新しいカテゴリ名を追加" />
+        <button id="addCat">追加</button>
+
+        <label>作業<span class="muted">（分）</span>：
+          <input id="workMin" type="number" min="1" value="25" style="width:80px">
+        </label>
+        <label>休憩<span class="muted">（分）</span>：
+          <input id="breakMin" type="number" min="1" value="5" style="width:80px">
+        </label>
+      </div>
+
+      <div class="timer" id="display">25:00</div>
+
+      <div class="row">
+        <button class="primary" id="startBtn">スタート</button>
+        <button id="pauseBtn" disabled>一時停止</button>
+        <button id="resumeBtn" disabled>再開</button>
+        <button class="danger" id="stopBtn" disabled>停止して記録</button>
+        <button id="skipBreak" disabled>休憩スキップ</button>
+      </div>
+      <p class="muted" style="margin:.6rem 0 0">※「停止して記録」は**作業時間のみ**を履歴へ保存します（休憩は記録しません）。</p>
+    </section>
+
+    <section class="card" style="margin-top:12px">
+      <h2 style="margin:0 0 .6rem">履歴</h2>
+      <div class="row" style="justify-content:space-between">
+        <div class="row" style="gap:8px">
+          <button id="exportBtn">CSVエクスポート</button>
+          <button id="clearBtn" class="danger">履歴を全消去</button>
+        </div>
+        <span class="muted" id="totals"></span>
+      </div>
+      <table id="logTable">
+        <thead><tr><th>日時</th><th>カテゴリ</th><th class="right">作業時間</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </section>
+  </div>
+
+<script>
+/* ====== 状態と保存 ====== */
+const KEY = 'pomodoro.logs.v1';
+const CATKEY = 'pomodoro.cats.v1';
+const $ = s => document.querySelector(s);
+const pad = n => n.toString().padStart(2,'0');
+
+let logs = load(KEY) || [];
+let categories = load(CATKEY) || ['学習','開発','家事','その他'];
+save(CATKEY, categories);
+
+function load(k){ try{ return JSON.parse(localStorage.getItem(k)) }catch{ return null } }
+function save(k,v){ localStorage.setItem(k, JSON.stringify(v)) }
+
+/* ====== タイマー ====== */
+let mode = 'idle';          // 'work' | 'break' | 'idle' | 'paused'
+let startAt = 0;            // 作業開始のUNIX(ms)
+let elapsedWork = 0;        // 作業経過ms（ポーズ対応）
+let remain = 0;             // 今のモードの残りms
+let ticker = null;
+
+function initUI(){
+  // カテゴリ選択
+  const sel = $('#category'); sel.innerHTML = categories.map(c=>`<option>${escape(c)}</option>`).join('');
+  // ディスプレイ初期化
+  const wm = +$('#workMin').value || 25;
+  updateDisplay(wm*60*1000);
+  updateStatus('停止中');
+  renderLogs();
+}
+function escape(s){return (s||'').replace(/[&<>"']/g,m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[m]))}
+
+function updateDisplay(ms){
+  const m = Math.floor(ms/60000), s = Math.floor((ms%60000)/1000);
+  $('#display').textContent = `${pad(m)}:${pad(s)}`;
+}
+function updateStatus(text){ $('#status').textContent = text }
+
+function startTimer(){
+  if(mode!=='idle') return;
+  const wm = (+$('#workMin').value||25)*60*1000;
+  remain = wm;
+  elapsedWork = 0;
+  startAt = Date.now();
+  mode = 'work';
+  enableRunning(true);
+  updateStatus('作業中');
+  tick();
+}
+function pauseTimer(){
+  if(mode!=='work') return;
+  mode = 'paused';
+  elapsedWork += Date.now() - startAt;
+  clearInterval(ticker); ticker=null;
+  $('#pauseBtn').disabled = true;
+  $('#resumeBtn').disabled = false;
+  updateStatus('一時停止');
+}
+function resumeTimer(){
+  if(mode!=='paused') return;
+  mode = 'work';
+  startAt = Date.now();
+  $('#pauseBtn').disabled = false;
+  $('#resumeBtn').disabled = true;
+  updateStatus('作業中');
+  tick();
+}
+function stopAndLog(){
+  // 作業中 or 一時停止中のみ、作業時間をログ
+  let workMs = elapsedWork;
+  if(mode==='work'){ workMs += (Date.now() - startAt); }
+  if(workMs < 1000){ // 1秒未満は無視
+    resetAll(); return;
+  }
+  logs.unshift({
+    at: Date.now(),
+    category: $('#category').value,
+    ms: workMs
+  });
+  save(KEY, logs);
+  resetAll();
+  renderLogs();
+}
+
+function toBreak(){
+  const bm = (+$('#breakMin').value||5)*60*1000;
+  remain = bm;
+  startAt = Date.now();
+  mode = 'break';
+  updateStatus('休憩中');
+  $('#pauseBtn').disabled = true;
+  $('#resumeBtn').disabled = true;
+  $('#skipBreak').disabled = false;
+  tick();
+}
+
+function resetAll(){
+  clearInterval(ticker); ticker=null;
+  mode='idle'; remain=0; elapsedWork=0;
+  $('#pauseBtn').disabled = true;
+  $('#resumeBtn').disabled = true;
+  $('#stopBtn').disabled = true;
+  $('#skipBreak').disabled = true;
+  $('#startBtn').disabled = false;
+  const wm = (+$('#workMin').value||25)*60*1000;
+  updateDisplay(wm);
+  updateStatus('停止中');
+}
+
+function tick(){
+  clearInterval(ticker);
+  ticker = setInterval(()=>{
+    const now = Date.now();
+    const spent = now - startAt;
+    const left = Math.max(0, remain - spent);
+    updateDisplay(left);
+    if(left<=0){
+      clearInterval(ticker); ticker=null;
+      if(mode==='work'){
+        // 作業が終わったら休憩へ（記録は停止ボタンで行う想定）
+        elapsedWork += remain; // remain=作業予定時間
+        toBreak();
+        beep();
+      }else if(mode==='break'){
+        resetAll();
+        beep();
+      }
+    }
+  }, 250);
+}
+
+function enableRunning(on){
+  $('#startBtn').disabled = on;
+  $('#pauseBtn').disabled = !on;
+  $('#stopBtn').disabled = !on;
+  $('#resumeBtn').disabled = true;
+  $('#skipBreak').disabled = true;
+}
+
+/* ====== 履歴表示・集計 ====== */
+function renderLogs(){
+  const tb = $('#logTable tbody'); tb.innerHTML = '';
+  let sumByCat = {};
+  for(const x of logs){
+    sumByCat[x.category] = (sumByCat[x.category]||0) + x.ms;
+    const tr = document.createElement('tr');
+    const d = new Date(x.at);
+    tr.innerHTML = `
+      <td>${d.toLocaleString()}</td>
+      <td>${escape(x.category)}</td>
+      <td class="right">${fmtMin(x.ms)}</td>`;
+    tb.appendChild(tr);
+  }
+  // 合計表示
+  const pairs = Object.entries(sumByCat).map(([k,v])=>`${k}:${fmtMin(v)}`).join(' ／ ');
+  $('#totals').textContent = pairs? `カテゴリ別合計 → ${pairs}` : 'まだ記録はありません';
+}
+function fmtMin(ms){ const m=Math.round(ms/60000); return `${m}分` }
+
+/* ====== 音（簡易ビープ） ====== */
+function beep(){
+  try{
+    const a = new (window.AudioContext||window.webkitAudioContext)();
+    const o = a.createOscillator(); const g = a.createGain();
+    o.connect(g); g.connect(a.destination);
+    o.type='sine'; o.frequency.value=880; g.gain.setValueAtTime(0.05, a.currentTime);
+    o.start(); setTimeout(()=>{ o.stop(); a.close(); }, 250);
+  }catch{}
+}
+
+/* ====== イベント割当 ====== */
+$('#startBtn').onclick = startTimer;
+$('#pauseBtn').onclick = pauseTimer;
+$('#resumeBtn').onclick = resumeTimer;
+$('#stopBtn').onclick = stopAndLog;
+$('#skipBreak').onclick = ()=>{ if(mode==='break'){ resetAll(); } };
+
+$('#addCat').onclick = ()=>{
+  const v = $('#newCat').value.trim(); if(!v) return;
+  if(!categories.includes(v)){ categories.push(v); save(CATKEY, categories); }
+  $('#newCat').value='';
+  initUI();
+};
+
+$('#exportBtn').onclick = ()=>{
+  const header = 'datetime,category,minutes\n';
+  const rows = logs.map(x=>{
+    const d = new Date(x.at).toISOString();
+    return `${d},${x.category.replaceAll(',',' ')},${Math.round(x.ms/60000)}`;
+  }).join('\n');
+  const blob = new Blob([header+rows], {type:'text/csv'});
+  const a = Object.assign(document.createElement('a'), {href:URL.createObjectURL(blob), download:'pomodoro_logs.csv'});
+  a.click(); URL.revokeObjectURL(a.href);
+};
+$('#clearBtn').onclick = ()=>{
+  if(confirm('履歴をすべて削除しますか？')){ logs=[]; save(KEY, logs); renderLogs(); }
+};
+
+// 入力時間が変わったら表示も更新
+$('#workMin').oninput = ()=>{ if(mode==='idle'){ updateDisplay((+$('#workMin').value||25)*60*1000) } };
+
+initUI();
+</script>
+</body>
+</html>
