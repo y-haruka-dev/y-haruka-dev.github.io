@@ -4,110 +4,207 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>ポモドーロタイマー</title>
-<meta name="description" content="カテゴリを選んでスタート、停止で時間を自動記録するポモドーロタイマー。日別集計グラフつき。">
+<meta name="description" content="カテゴリを選んでスタート、停止で時間を自動記録するポモドーロ。日別集計グラフつき。">
 <style>
-  :root{--bg:#0b0c10;--fg:#0b1020;--muted:#5a6473;--card:#ffffff;--line:#e6eaf1;--brand:#7dd3fc;--brand2:#a78bfa}
-  @media (prefers-color-scheme: dark){:root{--bg:#0b0c10;--fg:#eef2f4;--muted:#9aa5ad;--card:#131720;--line:#232b36}}
+  /* ===== Design tokens ===== */
+  :root{
+    --bg:#f7f8fb;         /* 背景（ライト） */
+    --fg:#0b1020;         /* 文字（ライト） */
+    --muted:#5a6473;      /* 補助文字 */
+    --card:#ffffff;       /* カード背景 */
+    --line:#e6eaf1;       /* 枠線 */
+    --brand:#5cc9ee;      /* 主ボタン */
+    --brand2:#9aa7ff;     /* アクセント/グラデ */
+    --radius:12px;        /* 角丸 */
+    --shadow:0 8px 18px rgba(20,30,60,.06); /* 薄めの影 */
+    --wrap:1000px;
+    --space:14px;
+    --focus:#7aa2ff;
+    --btnh:44px;
+    --font: system-ui, -apple-system, "Segoe UI", Roboto, "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0b0c10; --fg:#eef2f4; --muted:#9aa5ad; --card:#131720; --line:#232b36;
+      --shadow:0 10px 22px rgba(0,0,0,.18);
+    }
+  }
+
+  /* ===== Base ===== */
   *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--fg);font-family:system-ui,-apple-system,Segoe UI,Roboto,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif;line-height:1.6}
-  a{color:inherit;text-decoration:none}
-  .wrap{max-width:980px;margin:auto;padding:18px}
-  .appbar{position:sticky;top:0;z-index:10;background:rgba(255,255,255,.7);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-radius:12px}
-  @media (prefers-color-scheme: dark){.appbar{background:rgba(0,0,0,.35)}}
-  .pill{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:999px;padding:.25rem .6rem;color:var(--muted)}
-  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:0 10px 22px rgba(20,30,60,.08)}
-  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-  select,input,button{height:40px;padding:.6rem .8rem;border:1px solid var(--line);border-radius:10px;background:transparent;color:inherit}
-  input[type="number"]{width:80px}
-  button{cursor:pointer}
-  .primary{background:linear-gradient(135deg,var(--brand),var(--brand2));color:#081018;border:none;font-weight:700}
-  .danger{border-color:#ff6b6b}
-  h1{margin:.4rem 0 1rem}
-  h2{margin:0 0 .6rem}
-  .timer{font-weight:800;font-size:clamp(36px,8vw,72px);text-align:center;letter-spacing:.02em;margin:10px 0}
+  html{font-size:17px}
+  body{margin:0; background:var(--bg); color:var(--fg); font-family:var(--font); line-height:1.7}
+  a{color:inherit; text-decoration:none}
+  .wrap{max-width:var(--wrap); margin:auto; padding:16px}
+  .card{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:16px; box-shadow:var(--shadow)}
+  .row{display:flex; gap:10px; flex-wrap:wrap; align-items:center}
   .muted{color:var(--muted)}
-  table{width:100%;border-collapse:collapse;margin-top:10px;font-size:15px}
-  th,td{border-bottom:1px solid var(--line);padding:.5rem .4rem;text-align:left}
+
+  /* ===== App bar & Tabs ===== */
+  .appbar{position:sticky; top:0; z-index:10; backdrop-filter: blur(8px);
+    background: color-mix(in oklab, var(--bg) 82%, transparent);
+    border:1px solid var(--line); border-radius:calc(var(--radius) + 4px);
+    display:flex; justify-content:space-between; align-items:center; padding:10px 12px; margin-bottom:12px;
+  }
+  .tabs a{display:inline-flex; align-items:center; gap:6px; padding:.45rem .7rem; border-radius:10px; border:1px solid transparent}
+  .tabs a.active{border-color:var(--line); background:linear-gradient(180deg, rgba(255,255,255,.05), transparent)}
+  .logo{font-weight:800; letter-spacing:.02em}
+
+  /* ===== Controls ===== */
+  select,input,button{height:var(--btnh); padding:.6rem .8rem; border:1px solid var(--line); border-radius:10px; background:transparent; color:inherit}
+  input[type="number"]{width:88px}
+  button{cursor:pointer}
+  .btn{display:inline-flex; align-items:center; gap:8px}
+  .primary{background:linear-gradient(135deg,var(--brand),var(--brand2)); color:#081018; border:none; font-weight:700}
+  .danger{border-color:#ff6b6b}
+  .timer{font-weight:800; font-size:clamp(38px,8vw,78px); text-align:center; letter-spacing:.02em; margin:12px 0}
+
+  /* ===== Grid ===== */
+  .grid{display:grid; gap:var(--space)}
+  @media (min-width:600px){
+    .grid-2{grid-template-columns:1.2fr 1fr}
+  }
+
+  /* ===== Table ===== */
+  table{width:100%; border-collapse:collapse; margin-top:10px; font-size:15px}
+  th,td{border-bottom:1px solid var(--line); padding:.55rem .4rem; text-align:left}
   .right{text-align:right}
-  canvas{width:100%;height:auto;display:block}
+
+  /* ===== Canvas ===== */
+  canvas{width:100%; height:auto; display:block}
+
+  /* ===== Accessibility ===== */
+  :focus-visible{outline:2px solid var(--focus); outline-offset:2px}
+  @media (prefers-reduced-motion: reduce){
+    .tabs a, .btn{transition:none}
+  }
+
+  /* ===== Icon ===== */
+  .icon{width:18px; height:18px; display:inline-block}
 </style>
 </head>
 <body>
   <div class="wrap">
+    <!-- App bar with tabs -->
     <header class="appbar">
-      <div class="row" style="gap:8px">
-        <strong>🍅 ポモドーロ</strong>
-        <span class="pill" id="status">停止中</span>
-      </div>
-      <a class="pill" href="./">← トップへ</a>
+      <strong class="logo">Pomodoro</strong>
+      <nav class="tabs" aria-label="主要タブ">
+        <a href="#top" class="active" data-tab>タイマー</a>
+        <a href="#logs" data-tab>履歴</a>
+        <a href="#stats" data-tab>日別集計</a>
+      </nav>
+      <span class="muted" id="status">停止中</span>
     </header>
 
     <!-- 操作 -->
-    <section class="card" style="margin-top:12px">
-      <h1>カテゴリを選んでスタート</h1>
-      <div class="row">
+    <section id="top" class="card">
+      <h1 style="margin:.2rem 0 1rem">カテゴリを選んでスタート</h1>
+      <div class="row" role="group" aria-label="基本設定">
         <label>カテゴリ：
-          <select id="category"></select>
+          <select id="category" aria-label="カテゴリ"></select>
         </label>
-        <input id="newCat" placeholder="新しいカテゴリ名を追加">
-        <button id="addCat">追加</button>
+        <input id="newCat" placeholder="新しいカテゴリ名を追加" aria-label="新しいカテゴリ名">
+        <button class="btn" id="addCat" aria-label="カテゴリを追加">
+          <!-- plus icon -->
+          <svg class="icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+          </svg>追加
+        </button>
+
         <label>作業（分）：
-          <input id="workMin" type="number" min="1" value="25">
+          <input id="workMin" type="number" min="1" value="25" aria-label="作業分数">
         </label>
         <label>休憩（分）：
-          <input id="breakMin" type="number" min="1" value="5">
+          <input id="breakMin" type="number" min="1" value="5" aria-label="休憩分数">
         </label>
       </div>
 
-      <div class="timer" id="display">25:00</div>
+      <div class="timer" id="display" aria-live="polite">25:00</div>
 
-      <div class="row">
-        <button class="primary" id="startBtn">スタート</button>
-        <button id="pauseBtn" disabled>一時停止</button>
-        <button id="resumeBtn" disabled>再開</button>
-        <button class="danger" id="stopBtn" disabled>停止して記録</button>
-        <button id="skipBreak" disabled>休憩スキップ</button>
+      <div class="row" role="group" aria-label="操作ボタン">
+        <button class="btn primary" id="startBtn" aria-label="スタート">
+          <!-- play icon -->
+          <svg class="icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M8 6l10 6-10 6V6z" fill="currentColor"/>
+          </svg>スタート
+        </button>
+        <button class="btn" id="pauseBtn" disabled aria-label="一時停止">
+          <!-- pause icon -->
+          <svg class="icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M8 6h3v12H8zM13 6h3v12h-3z" fill="currentColor"/>
+          </svg>一時停止
+        </button>
+        <button class="btn" id="resumeBtn" disabled aria-label="再開">
+          <!-- resume (play) -->
+          <svg class="icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M8 6l10 6-10 6V6z" fill="currentColor"/>
+          </svg>再開
+        </button>
+        <button class="btn danger" id="stopBtn" disabled aria-label="停止して記録">
+          <!-- stop icon -->
+          <svg class="icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M7 7h10v10H7z" fill="currentColor"/>
+          </svg>停止して記録
+        </button>
+        <button class="btn" id="skipBreak" disabled aria-label="休憩をスキップ">
+          <!-- skip icon -->
+          <svg class="icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M5 6l7 6-7 6V6zM13 6h2v12h-2z" fill="currentColor"/>
+          </svg>休憩スキップ
+        </button>
       </div>
       <p class="muted" style="margin:.6rem 0 0">※「停止して記録」は<strong>作業時間のみ</strong>を履歴へ保存します（休憩は記録しません）。</p>
     </section>
 
-    <!-- 履歴 -->
-    <section class="card" style="margin-top:12px">
-      <h2>履歴</h2>
-      <div class="row" style="justify-content:space-between">
-        <div class="row" style="gap:8px">
-          <button id="exportBtn">CSVエクスポート</button>
-          <button id="clearBtn" class="danger">履歴を全消去</button>
+    <!-- 2カラム：履歴 / グラフ -->
+    <section class="grid grid-2" style="margin-top:12px">
+      <!-- 履歴 -->
+      <div id="logs" class="card">
+        <h2 style="margin:0 0 .6rem">履歴</h2>
+        <div class="row" style="justify-content:space-between">
+          <div class="row" style="gap:8px">
+            <button class="btn" id="exportBtn" aria-label="CSVエクスポート">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M12 3v12m0 0l-3-3m3 3l3-3M5 18h14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>CSVエクスポート
+            </button>
+            <button class="btn danger" id="clearBtn" aria-label="履歴を全消去">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M6 7h12M9 7v10m6-10v10M8 7l1-2h6l1 2M6 7l1 12h10l1-12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>履歴を全消去
+            </button>
+          </div>
+          <span class="muted" id="totals"></span>
         </div>
-        <span class="muted" id="totals"></span>
+        <table id="logTable" aria-label="作業履歴">
+          <thead><tr><th>日時</th><th>カテゴリ</th><th class="right">作業時間</th></tr></thead>
+          <tbody></tbody>
+        </table>
       </div>
-      <table id="logTable">
-        <thead><tr><th>日時</th><th>カテゴリ</th><th class="right">作業時間</th></tr></thead>
-        <tbody></tbody>
-      </table>
-    </section>
 
-    <!-- 日別集計グラフ -->
-    <section class="card" style="margin-top:12px">
-      <h2>日別集計</h2>
-      <div class="row" style="justify-content:space-between;align-items:center">
-        <span class="muted">直近 <span id="rangeInfo">14</span> 日</span>
-        <label>表示範囲：
-          <select id="rangeSel">
-            <option value="7">7</option>
-            <option value="14" selected>14</option>
-            <option value="30">30</option>
-          </select> 日
-        </label>
+      <!-- 日別集計グラフ -->
+      <div id="stats" class="card">
+        <h2 style="margin:0 0 .6rem">日別集計</h2>
+        <div class="row" style="justify-content:space-between;align-items:center">
+          <span class="muted">直近 <span id="rangeInfo">14</span> 日</span>
+          <label>表示範囲：
+            <select id="rangeSel" aria-label="表示範囲（日数）">
+              <option value="7">7</option>
+              <option value="14" selected>14</option>
+              <option value="30">30</option>
+            </select> 日
+          </label>
+        </div>
+        <canvas id="dailyChart" height="220" aria-label="日別合計（分）の棒グラフ"></canvas>
       </div>
-      <canvas id="dailyChart" height="220" aria-label="日別合計（分）の棒グラフ"></canvas>
     </section>
   </div>
 
 <script>
 /* ========= 基本ユーティリティ ========= */
 const KEY='pomodoro.logs.v1', CATKEY='pomodoro.cats.v1';
-const $=s=>document.querySelector(s), pad=n=>String(n).padStart(2,'0');
+const $=s=>document.querySelector(s), $$=s=>document.querySelectorAll(s);
+const pad=n=>String(n).padStart(2,'0');
 function load(k){ try{ return JSON.parse(localStorage.getItem(k)) }catch{ return null } }
 function save(k,v){ localStorage.setItem(k, JSON.stringify(v)) }
 function escapeHtml(s){return (s||'').replace(/[&<>"']/g,m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[m]))}
@@ -127,7 +224,15 @@ function initUI(){
   const sel = $('#category'); sel.innerHTML = categories.map(c=>`<option>${escapeHtml(c)}</option>`).join('');
   const wm = (+$('#workMin').value||25)*60*1000; updateDisplay(wm); updateStatus('停止中');
   renderLogs(); drawDailyChart();
+  // タブのactive
+  updateTabs();
 }
+function updateTabs(){
+  const hash = location.hash || '#top';
+  $$('.tabs a').forEach(a=>a.classList.toggle('active', a.getAttribute('href')===hash));
+}
+window.addEventListener('hashchange', updateTabs);
+
 function updateDisplay(ms){ const m=Math.floor(ms/60000), s=Math.floor((ms%60000)/1000); $('#display').textContent=`${pad(m)}:${pad(s)}` }
 function updateStatus(t){ $('#status').textContent=t }
 
@@ -149,88 +254,4 @@ function stopAndLog(){
   if(workMs>=1000){ logs.unshift({at:Date.now(), category:$('#category').value, ms:workMs}); save(KEY,logs); }
   resetAll(); renderLogs(); drawDailyChart();
 }
-function toBreak(){
-  const bm=(+$('#breakMin').value||5)*60*1000; remain=bm; startAt=Date.now(); mode='break';
-  updateStatus('休憩中'); $('#pauseBtn').disabled=true; $('#resumeBtn').disabled=true; $('#skipBreak').disabled=false; tick();
-}
-function resetAll(){ clearInterval(ticker); ticker=null; mode='idle'; remain=0; elapsedWork=0;
-  $('#pauseBtn').disabled=true; $('#resumeBtn').disabled=true; $('#stopBtn').disabled=true; $('#skipBreak').disabled=true; $('#startBtn').disabled=false;
-  const wm=(+$('#workMin').value||25)*60*1000; updateDisplay(wm); updateStatus('停止中'); }
-function tick(){
-  clearInterval(ticker);
-  ticker=setInterval(()=>{
-    const left=Math.max(0, remain-(Date.now()-startAt));
-    updateDisplay(left);
-    if(left<=0){
-      clearInterval(ticker); ticker=null;
-      if(mode==='work'){ elapsedWork+=remain; toBreak(); beep(); }
-      else if(mode==='break'){ resetAll(); beep(); }
-    }
-  },250);
-}
-
-/* ========= 履歴表示 ========= */
-function fmtMin(ms){ return `${Math.round(ms/60000)}分` }
-function renderLogs(){
-  const tb=$('#logTable tbody'); tb.innerHTML='';
-  let byCat={};
-  for(const x of logs){
-    byCat[x.category]=(byCat[x.category]||0)+x.ms;
-    const tr=document.createElement('tr'); const d=new Date(x.at);
-    tr.innerHTML=`<td>${d.toLocaleString()}</td><td>${escapeHtml(x.category)}</td><td class="right">${fmtMin(x.ms)}</td>`;
-    tb.appendChild(tr);
-  }
-  const pairs=Object.entries(byCat).map(([k,v])=>`${k}:${fmtMin(v)}`).join(' ／ ');
-  $('#totals').textContent=pairs?`カテゴリ別合計 → ${pairs}`:'まだ記録はありません';
-}
-
-/* ========= 日別集計グラフ（純Canvas） ========= */
-let chartRange=14; const dpr=window.devicePixelRatio||1;
-function drawDailyChart(){
-  const cvs=document.getElementById('dailyChart'); if(!cvs) return;
-  const ctx=cvs.getContext('2d');
-  const cssW=cvs.clientWidth||600, cssH=parseInt(cvs.getAttribute('height'))||220;
-  cvs.width=Math.round(cssW*dpr); cvs.height=Math.round(cssH*dpr); ctx.setTransform(dpr,0,0,dpr,0,0);
-
-  const today=new Date(); today.setHours(0,0,0,0);
-  const labels=[]; for(let i=chartRange-1;i>=0;i--){ const d=new Date(today); d.setDate(today.getDate()-i); labels.push(`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`); }
-  const perDay=Object.fromEntries(labels.map(k=>[k,0]));
-  for(const x of logs){ const d=new Date(x.at); const k=`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; if(k in perDay) perDay[k]+=Math.round(x.ms/60000); }
-  const values=labels.map(k=>perDay[k]); const maxV=Math.max(60,...values);
-
-  const P={l:40,r:12,t:16,b:26}, W=cssW-P.l-P.r, H=cssH-P.t-P.b;
-  ctx.clearRect(0,0,cssW,cssH);
-  ctx.strokeStyle='rgba(120,130,150,.3)'; ctx.lineWidth=1;
-  ctx.font='12px system-ui,-apple-system,Segoe UI,Roboto,sans-serif';
-  ctx.fillStyle=getComputedStyle(document.body).getPropertyValue('--muted')||'#6b7280';
-  for(let i=0;i<=5;i++){ const y=P.t+H*(i/5); const v=Math.round(maxV*(1-i/5)); ctx.beginPath(); ctx.moveTo(P.l,y); ctx.lineTo(P.l+W,y); ctx.stroke(); ctx.fillText(String(v),8,y+4); }
-
-  const gap=4, barW=Math.max(4,(W-gap*(labels.length-1))/labels.length);
-  const brand=getComputedStyle(document.body).getPropertyValue('--brand')||'#7dd3fc';
-  const brand2=getComputedStyle(document.body).getPropertyValue('--brand2')||'#a78bfa';
-
-  for(let i=0;i<labels.length;i++){
-    const x=P.l+i*(barW+gap); const h=(values[i]/maxV)*H; const y=P.t+(H-h);
-    const grad=ctx.createLinearGradient(0,y,0,y+h); grad.addColorStop(0,brand.trim()); grad.addColorStop(1,brand2.trim());
-    ctx.fillStyle=grad; ctx.fillRect(x,y,barW,h);
-    if(labels.length<=14 ? i%2===0 : i%5===0){ const lab=labels[i].slice(5); ctx.fillStyle=getComputedStyle(document.body).getPropertyValue('--muted')||'#6b7280'; ctx.fillText(lab,x,P.t+H+14); }
-  }
-  const sum=values.reduce((a,b)=>a+b,0); ctx.fillStyle=getComputedStyle(document.body).getPropertyValue('--muted')||'#6b7280'; ctx.fillText(`計 ${sum} 分`, cssW-80, P.t+12);
-}
-document.getElementById('rangeSel')?.addEventListener('change', e=>{ chartRange=parseInt(e.target.value,10)||14; $('#rangeInfo').textContent=chartRange; drawDailyChart(); });
-
-/* ========= 音 ========= */
-function beep(){ try{ const a=new (window.AudioContext||window.webkitAudioContext)(); const o=a.createOscillator(), g=a.createGain(); o.connect(g); g.connect(a.destination); o.type='sine'; o.frequency.value=880; g.gain.setValueAtTime(0.05,a.currentTime); o.start(); setTimeout(()=>{ o.stop(); a.close(); },250);}catch{} }
-
-/* ========= イベント ========= */
-$('#startBtn').onclick=startTimer; $('#pauseBtn').onclick=pauseTimer; $('#resumeBtn').onclick=resumeTimer;
-$('#stopBtn').onclick=stopAndLog; $('#skipBreak').onclick=()=>{ if(mode==='break') resetAll(); };
-$('#addCat').onclick=()=>{ const v=$('#newCat').value.trim(); if(!v) return; if(!categories.includes(v)){ categories.push(v); save(CATKEY,categories); } $('#newCat').value=''; initUI(); };
-$('#exportBtn').onclick=()=>{ const head='datetime,category,minutes\n'; const rows=logs.map(x=>`${new Date(x.at).toISOString()},${String(x.category).replaceAll(',',' ')},${Math.round(x.ms/60000)}`).join('\n'); const blob=new Blob([head+rows],{type:'text/csv'}); const a=Object.assign(document.createElement('a'),{href:URL.createObjectURL(blob),download:'pomodoro_logs.csv'}); a.click(); URL.revokeObjectURL(a.href); };
-$('#clearBtn').onclick=()=>{ if(confirm('履歴をすべて削除しますか？')){ logs=[]; save(KEY,logs); renderLogs(); drawDailyChart(); } };
-$('#workMin').oninput=()=>{ if(mode==='idle'){ updateDisplay((+$('#workMin').value||25)*60*1000) } };
-
-initUI();
-</script>
-</body>
-</html>
+function t
