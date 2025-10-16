@@ -4,33 +4,37 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>ポモドーロタイマー</title>
-<meta name="description" content="カテゴリを選んでスタート、停止で時間を自動記録するポモドーロタイマー。">
+<meta name="description" content="カテゴリを選んでスタート、停止で時間を自動記録するポモドーロタイマー。日別集計グラフつき。">
 <style>
-  :root{--bg:#0b0c10;--fg:#eef2f4;--muted:#9aa5ad;--card:#131720;--line:#232b36;--brand:#7dd3fc;--brand2:#a78bfa}
-  @media (prefers-color-scheme: light){:root{--bg:#f6f8fb;--fg:#0b1020;--muted:#5a6473;--card:#fff;--line:#e6eaf1}}
+  :root{--bg:#0b0c10;--fg:#0b1020;--muted:#5a6473;--card:#ffffff;--line:#e6eaf1;--brand:#7dd3fc;--brand2:#a78bfa}
+  @media (prefers-color-scheme: dark){:root{--bg:#0b0c10;--fg:#eef2f4;--muted:#9aa5ad;--card:#131720;--line:#232b36}}
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);color:var(--fg);font-family:system-ui,-apple-system,Segoe UI,Roboto,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif;line-height:1.6}
   a{color:inherit;text-decoration:none}
-  .wrap{max-width:900px;margin:auto;padding:18px}
-  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px}
-  h1{margin:.4rem 0 1rem}
+  .wrap{max-width:980px;margin:auto;padding:18px}
+  .appbar{position:sticky;top:0;z-index:10;background:rgba(255,255,255,.7);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-radius:12px}
+  @media (prefers-color-scheme: dark){.appbar{background:rgba(0,0,0,.35)}}
+  .pill{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:999px;padding:.25rem .6rem;color:var(--muted)}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:0 10px 22px rgba(20,30,60,.08)}
   .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-  select,input,button{padding:.6rem .8rem;border:1px solid var(--line);border-radius:10px;background:transparent;color:inherit}
+  select,input,button{height:40px;padding:.6rem .8rem;border:1px solid var(--line);border-radius:10px;background:transparent;color:inherit}
+  input[type="number"]{width:80px}
   button{cursor:pointer}
   .primary{background:linear-gradient(135deg,var(--brand),var(--brand2));color:#081018;border:none;font-weight:700}
   .danger{border-color:#ff6b6b}
-  .timer{font-weight:800; font-size:clamp(36px,8vw,72px); text-align:center; margin:10px 0}
-  .pill{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:999px;padding:.25rem .6rem;color:var(--muted)}
+  h1{margin:.4rem 0 1rem}
+  h2{margin:0 0 .6rem}
+  .timer{font-weight:800;font-size:clamp(36px,8vw,72px);text-align:center;letter-spacing:.02em;margin:10px 0}
+  .muted{color:var(--muted)}
   table{width:100%;border-collapse:collapse;margin-top:10px;font-size:15px}
   th,td{border-bottom:1px solid var(--line);padding:.5rem .4rem;text-align:left}
-  tfoot td{font-weight:700}
   .right{text-align:right}
-  .muted{color:var(--muted)}
+  canvas{width:100%;height:auto;display:block}
 </style>
 </head>
 <body>
   <div class="wrap">
-    <header class="row" style="justify-content:space-between">
+    <header class="appbar">
       <div class="row" style="gap:8px">
         <strong>🍅 ポモドーロ</strong>
         <span class="pill" id="status">停止中</span>
@@ -38,20 +42,20 @@
       <a class="pill" href="./">← トップへ</a>
     </header>
 
-    <section class="card">
+    <!-- 操作 -->
+    <section class="card" style="margin-top:12px">
       <h1>カテゴリを選んでスタート</h1>
       <div class="row">
         <label>カテゴリ：
           <select id="category"></select>
         </label>
-        <input id="newCat" placeholder="新しいカテゴリ名を追加" />
+        <input id="newCat" placeholder="新しいカテゴリ名を追加">
         <button id="addCat">追加</button>
-
-        <label>作業<span class="muted">（分）</span>：
-          <input id="workMin" type="number" min="1" value="25" style="width:80px">
+        <label>作業（分）：
+          <input id="workMin" type="number" min="1" value="25">
         </label>
-        <label>休憩<span class="muted">（分）</span>：
-          <input id="breakMin" type="number" min="1" value="5" style="width:80px">
+        <label>休憩（分）：
+          <input id="breakMin" type="number" min="1" value="5">
         </label>
       </div>
 
@@ -64,11 +68,12 @@
         <button class="danger" id="stopBtn" disabled>停止して記録</button>
         <button id="skipBreak" disabled>休憩スキップ</button>
       </div>
-      <p class="muted" style="margin:.6rem 0 0">※「停止して記録」は**作業時間のみ**を履歴へ保存します（休憩は記録しません）。</p>
+      <p class="muted" style="margin:.6rem 0 0">※「停止して記録」は<strong>作業時間のみ</strong>を履歴へ保存します（休憩は記録しません）。</p>
     </section>
 
+    <!-- 履歴 -->
     <section class="card" style="margin-top:12px">
-      <h2 style="margin:0 0 .6rem">履歴</h2>
+      <h2>履歴</h2>
       <div class="row" style="justify-content:space-between">
         <div class="row" style="gap:8px">
           <button id="exportBtn">CSVエクスポート</button>
@@ -81,218 +86,151 @@
         <tbody></tbody>
       </table>
     </section>
+
+    <!-- 日別集計グラフ -->
+    <section class="card" style="margin-top:12px">
+      <h2>日別集計</h2>
+      <div class="row" style="justify-content:space-between;align-items:center">
+        <span class="muted">直近 <span id="rangeInfo">14</span> 日</span>
+        <label>表示範囲：
+          <select id="rangeSel">
+            <option value="7">7</option>
+            <option value="14" selected>14</option>
+            <option value="30">30</option>
+          </select> 日
+        </label>
+      </div>
+      <canvas id="dailyChart" height="220" aria-label="日別合計（分）の棒グラフ"></canvas>
+    </section>
   </div>
 
 <script>
-/* ====== 状態と保存 ====== */
-const KEY = 'pomodoro.logs.v1';
-const CATKEY = 'pomodoro.cats.v1';
-const $ = s => document.querySelector(s);
-const pad = n => n.toString().padStart(2,'0');
-
-let logs = load(KEY) || [];
-let categories = load(CATKEY) || ['学習','開発','家事','その他'];
-save(CATKEY, categories);
-
+/* ========= 基本ユーティリティ ========= */
+const KEY='pomodoro.logs.v1', CATKEY='pomodoro.cats.v1';
+const $=s=>document.querySelector(s), pad=n=>String(n).padStart(2,'0');
 function load(k){ try{ return JSON.parse(localStorage.getItem(k)) }catch{ return null } }
 function save(k,v){ localStorage.setItem(k, JSON.stringify(v)) }
+function escapeHtml(s){return (s||'').replace(/[&<>"']/g,m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[m]))}
 
-/* ====== タイマー ====== */
-let mode = 'idle';          // 'work' | 'break' | 'idle' | 'paused'
-let startAt = 0;            // 作業開始のUNIX(ms)
-let elapsedWork = 0;        // 作業経過ms（ポーズ対応）
-let remain = 0;             // 今のモードの残りms
-let ticker = null;
+/* ========= 状態 ========= */
+let logs = load(KEY) || [];
+let categories = load(CATKEY) || ['学習','開発','家事','その他']; save(CATKEY, categories);
 
+let mode='idle';        // 'work' | 'break' | 'paused' | 'idle'
+let startAt=0;          // 現モード開始時刻
+let elapsedWork=0;      // 作業の実経過（ポーズ対応）
+let remain=0;           // 現モードの残りms
+let ticker=null;
+
+/* ========= 初期化 ========= */
 function initUI(){
-  // カテゴリ選択
-  const sel = $('#category'); sel.innerHTML = categories.map(c=>`<option>${escape(c)}</option>`).join('');
-  // ディスプレイ初期化
-  const wm = +$('#workMin').value || 25;
-  updateDisplay(wm*60*1000);
-  updateStatus('停止中');
-  renderLogs();
+  const sel = $('#category'); sel.innerHTML = categories.map(c=>`<option>${escapeHtml(c)}</option>`).join('');
+  const wm = (+$('#workMin').value||25)*60*1000; updateDisplay(wm); updateStatus('停止中');
+  renderLogs(); drawDailyChart();
 }
-function escape(s){return (s||'').replace(/[&<>"']/g,m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[m]))}
+function updateDisplay(ms){ const m=Math.floor(ms/60000), s=Math.floor((ms%60000)/1000); $('#display').textContent=`${pad(m)}:${pad(s)}` }
+function updateStatus(t){ $('#status').textContent=t }
 
-function updateDisplay(ms){
-  const m = Math.floor(ms/60000), s = Math.floor((ms%60000)/1000);
-  $('#display').textContent = `${pad(m)}:${pad(s)}`;
+/* ========= タイマー制御 ========= */
+function enableRunning(on){
+  $('#startBtn').disabled=on; $('#pauseBtn').disabled=!on; $('#stopBtn').disabled=!on;
+  $('#resumeBtn').disabled=true; $('#skipBreak').disabled=true;
 }
-function updateStatus(text){ $('#status').textContent = text }
-
 function startTimer(){
   if(mode!=='idle') return;
-  const wm = (+$('#workMin').value||25)*60*1000;
-  remain = wm;
-  elapsedWork = 0;
-  startAt = Date.now();
-  mode = 'work';
-  enableRunning(true);
-  updateStatus('作業中');
-  tick();
+  const wm=(+$('#workMin').value||25)*60*1000;
+  remain=wm; elapsedWork=0; startAt=Date.now(); mode='work';
+  enableRunning(true); updateStatus('作業中'); tick();
 }
-function pauseTimer(){
-  if(mode!=='work') return;
-  mode = 'paused';
-  elapsedWork += Date.now() - startAt;
-  clearInterval(ticker); ticker=null;
-  $('#pauseBtn').disabled = true;
-  $('#resumeBtn').disabled = false;
-  updateStatus('一時停止');
-}
-function resumeTimer(){
-  if(mode!=='paused') return;
-  mode = 'work';
-  startAt = Date.now();
-  $('#pauseBtn').disabled = false;
-  $('#resumeBtn').disabled = true;
-  updateStatus('作業中');
-  tick();
-}
+function pauseTimer(){ if(mode!=='work')return; mode='paused'; elapsedWork+=Date.now()-startAt; clearInterval(ticker); $('#pauseBtn').disabled=true; $('#resumeBtn').disabled=false; updateStatus('一時停止'); }
+function resumeTimer(){ if(mode!=='paused')return; mode='work'; startAt=Date.now(); $('#pauseBtn').disabled=false; $('#resumeBtn').disabled=true; updateStatus('作業中'); tick(); }
 function stopAndLog(){
-  // 作業中 or 一時停止中のみ、作業時間をログ
-  let workMs = elapsedWork;
-  if(mode==='work'){ workMs += (Date.now() - startAt); }
-  if(workMs < 1000){ // 1秒未満は無視
-    resetAll(); return;
-  }
-  logs.unshift({
-    at: Date.now(),
-    category: $('#category').value,
-    ms: workMs
-  });
-  save(KEY, logs);
-  resetAll();
-  renderLogs();
+  let workMs=elapsedWork; if(mode==='work') workMs+=Date.now()-startAt;
+  if(workMs>=1000){ logs.unshift({at:Date.now(), category:$('#category').value, ms:workMs}); save(KEY,logs); }
+  resetAll(); renderLogs(); drawDailyChart();
 }
-
 function toBreak(){
-  const bm = (+$('#breakMin').value||5)*60*1000;
-  remain = bm;
-  startAt = Date.now();
-  mode = 'break';
-  updateStatus('休憩中');
-  $('#pauseBtn').disabled = true;
-  $('#resumeBtn').disabled = true;
-  $('#skipBreak').disabled = false;
-  tick();
+  const bm=(+$('#breakMin').value||5)*60*1000; remain=bm; startAt=Date.now(); mode='break';
+  updateStatus('休憩中'); $('#pauseBtn').disabled=true; $('#resumeBtn').disabled=true; $('#skipBreak').disabled=false; tick();
 }
-
-function resetAll(){
-  clearInterval(ticker); ticker=null;
-  mode='idle'; remain=0; elapsedWork=0;
-  $('#pauseBtn').disabled = true;
-  $('#resumeBtn').disabled = true;
-  $('#stopBtn').disabled = true;
-  $('#skipBreak').disabled = true;
-  $('#startBtn').disabled = false;
-  const wm = (+$('#workMin').value||25)*60*1000;
-  updateDisplay(wm);
-  updateStatus('停止中');
-}
-
+function resetAll(){ clearInterval(ticker); ticker=null; mode='idle'; remain=0; elapsedWork=0;
+  $('#pauseBtn').disabled=true; $('#resumeBtn').disabled=true; $('#stopBtn').disabled=true; $('#skipBreak').disabled=true; $('#startBtn').disabled=false;
+  const wm=(+$('#workMin').value||25)*60*1000; updateDisplay(wm); updateStatus('停止中'); }
 function tick(){
   clearInterval(ticker);
-  ticker = setInterval(()=>{
-    const now = Date.now();
-    const spent = now - startAt;
-    const left = Math.max(0, remain - spent);
+  ticker=setInterval(()=>{
+    const left=Math.max(0, remain-(Date.now()-startAt));
     updateDisplay(left);
     if(left<=0){
       clearInterval(ticker); ticker=null;
-      if(mode==='work'){
-        // 作業が終わったら休憩へ（記録は停止ボタンで行う想定）
-        elapsedWork += remain; // remain=作業予定時間
-        toBreak();
-        beep();
-      }else if(mode==='break'){
-        resetAll();
-        beep();
-      }
+      if(mode==='work'){ elapsedWork+=remain; toBreak(); beep(); }
+      else if(mode==='break'){ resetAll(); beep(); }
     }
-  }, 250);
+  },250);
 }
 
-function enableRunning(on){
-  $('#startBtn').disabled = on;
-  $('#pauseBtn').disabled = !on;
-  $('#stopBtn').disabled = !on;
-  $('#resumeBtn').disabled = true;
-  $('#skipBreak').disabled = true;
-}
-
-/* ====== 履歴表示・集計 ====== */
+/* ========= 履歴表示 ========= */
+function fmtMin(ms){ return `${Math.round(ms/60000)}分` }
 function renderLogs(){
-  const tb = $('#logTable tbody'); tb.innerHTML = '';
-  let sumByCat = {};
+  const tb=$('#logTable tbody'); tb.innerHTML='';
+  let byCat={};
   for(const x of logs){
-    sumByCat[x.category] = (sumByCat[x.category]||0) + x.ms;
-    const tr = document.createElement('tr');
-    const d = new Date(x.at);
-    tr.innerHTML = `
-      <td>${d.toLocaleString()}</td>
-      <td>${escape(x.category)}</td>
-      <td class="right">${fmtMin(x.ms)}</td>`;
+    byCat[x.category]=(byCat[x.category]||0)+x.ms;
+    const tr=document.createElement('tr'); const d=new Date(x.at);
+    tr.innerHTML=`<td>${d.toLocaleString()}</td><td>${escapeHtml(x.category)}</td><td class="right">${fmtMin(x.ms)}</td>`;
     tb.appendChild(tr);
   }
-  // 合計表示
-  const pairs = Object.entries(sumByCat).map(([k,v])=>`${k}:${fmtMin(v)}`).join(' ／ ');
-  $('#totals').textContent = pairs? `カテゴリ別合計 → ${pairs}` : 'まだ記録はありません';
-}
-function fmtMin(ms){ const m=Math.round(ms/60000); return `${m}分` }
-
-/* ====== 音（簡易ビープ） ====== */
-function beep(){
-  try{
-    const a = new (window.AudioContext||window.webkitAudioContext)();
-    const o = a.createOscillator(); const g = a.createGain();
-    o.connect(g); g.connect(a.destination);
-    o.type='sine'; o.frequency.value=880; g.gain.setValueAtTime(0.05, a.currentTime);
-    o.start(); setTimeout(()=>{ o.stop(); a.close(); }, 250);
-  }catch{}
+  const pairs=Object.entries(byCat).map(([k,v])=>`${k}:${fmtMin(v)}`).join(' ／ ');
+  $('#totals').textContent=pairs?`カテゴリ別合計 → ${pairs}`:'まだ記録はありません';
 }
 
-/* ====== イベント割当 ====== */
-$('#startBtn').onclick = startTimer;
-$('#pauseBtn').onclick = pauseTimer;
-$('#resumeBtn').onclick = resumeTimer;
-$('#stopBtn').onclick = stopAndLog;
-$('#skipBreak').onclick = ()=>{ if(mode==='break'){ resetAll(); } };
+/* ========= 日別集計グラフ（純Canvas） ========= */
+let chartRange=14; const dpr=window.devicePixelRatio||1;
+function drawDailyChart(){
+  const cvs=document.getElementById('dailyChart'); if(!cvs) return;
+  const ctx=cvs.getContext('2d');
+  const cssW=cvs.clientWidth||600, cssH=parseInt(cvs.getAttribute('height'))||220;
+  cvs.width=Math.round(cssW*dpr); cvs.height=Math.round(cssH*dpr); ctx.setTransform(dpr,0,0,dpr,0,0);
 
-$('#addCat').onclick = ()=>{
-  const v = $('#newCat').value.trim(); if(!v) return;
-  if(!categories.includes(v)){ categories.push(v); save(CATKEY, categories); }
-  $('#newCat').value='';
-  initUI();
-};
+  const today=new Date(); today.setHours(0,0,0,0);
+  const labels=[]; for(let i=chartRange-1;i>=0;i--){ const d=new Date(today); d.setDate(today.getDate()-i); labels.push(`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`); }
+  const perDay=Object.fromEntries(labels.map(k=>[k,0]));
+  for(const x of logs){ const d=new Date(x.at); const k=`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; if(k in perDay) perDay[k]+=Math.round(x.ms/60000); }
+  const values=labels.map(k=>perDay[k]); const maxV=Math.max(60,...values);
 
-$('#exportBtn').onclick = ()=>{
-  const header = 'datetime,category,minutes\n';
-  const rows = logs.map(x=>{
-    const d = new Date(x.at).toISOString();
-    return `${d},${x.category.replaceAll(',',' ')},${Math.round(x.ms/60000)}`;
-  }).join('\n');
-  const blob = new Blob([header+rows], {type:'text/csv'});
-  const a = Object.assign(document.createElement('a'), {href:URL.createObjectURL(blob), download:'pomodoro_logs.csv'});
-  a.click(); URL.revokeObjectURL(a.href);
-};
-$('#clearBtn').onclick = ()=>{
-  if(confirm('履歴をすべて削除しますか？')){ logs=[]; save(KEY, logs); renderLogs(); }
-};
+  const P={l:40,r:12,t:16,b:26}, W=cssW-P.l-P.r, H=cssH-P.t-P.b;
+  ctx.clearRect(0,0,cssW,cssH);
+  ctx.strokeStyle='rgba(120,130,150,.3)'; ctx.lineWidth=1;
+  ctx.font='12px system-ui,-apple-system,Segoe UI,Roboto,sans-serif';
+  ctx.fillStyle=getComputedStyle(document.body).getPropertyValue('--muted')||'#6b7280';
+  for(let i=0;i<=5;i++){ const y=P.t+H*(i/5); const v=Math.round(maxV*(1-i/5)); ctx.beginPath(); ctx.moveTo(P.l,y); ctx.lineTo(P.l+W,y); ctx.stroke(); ctx.fillText(String(v),8,y+4); }
 
-// 入力時間が変わったら表示も更新
-$('#workMin').oninput = ()=>{ if(mode==='idle'){ updateDisplay((+$('#workMin').value||25)*60*1000) } };
+  const gap=4, barW=Math.max(4,(W-gap*(labels.length-1))/labels.length);
+  const brand=getComputedStyle(document.body).getPropertyValue('--brand')||'#7dd3fc';
+  const brand2=getComputedStyle(document.body).getPropertyValue('--brand2')||'#a78bfa';
+
+  for(let i=0;i<labels.length;i++){
+    const x=P.l+i*(barW+gap); const h=(values[i]/maxV)*H; const y=P.t+(H-h);
+    const grad=ctx.createLinearGradient(0,y,0,y+h); grad.addColorStop(0,brand.trim()); grad.addColorStop(1,brand2.trim());
+    ctx.fillStyle=grad; ctx.fillRect(x,y,barW,h);
+    if(labels.length<=14 ? i%2===0 : i%5===0){ const lab=labels[i].slice(5); ctx.fillStyle=getComputedStyle(document.body).getPropertyValue('--muted')||'#6b7280'; ctx.fillText(lab,x,P.t+H+14); }
+  }
+  const sum=values.reduce((a,b)=>a+b,0); ctx.fillStyle=getComputedStyle(document.body).getPropertyValue('--muted')||'#6b7280'; ctx.fillText(`計 ${sum} 分`, cssW-80, P.t+12);
+}
+document.getElementById('rangeSel')?.addEventListener('change', e=>{ chartRange=parseInt(e.target.value,10)||14; $('#rangeInfo').textContent=chartRange; drawDailyChart(); });
+
+/* ========= 音 ========= */
+function beep(){ try{ const a=new (window.AudioContext||window.webkitAudioContext)(); const o=a.createOscillator(), g=a.createGain(); o.connect(g); g.connect(a.destination); o.type='sine'; o.frequency.value=880; g.gain.setValueAtTime(0.05,a.currentTime); o.start(); setTimeout(()=>{ o.stop(); a.close(); },250);}catch{} }
+
+/* ========= イベント ========= */
+$('#startBtn').onclick=startTimer; $('#pauseBtn').onclick=pauseTimer; $('#resumeBtn').onclick=resumeTimer;
+$('#stopBtn').onclick=stopAndLog; $('#skipBreak').onclick=()=>{ if(mode==='break') resetAll(); };
+$('#addCat').onclick=()=>{ const v=$('#newCat').value.trim(); if(!v) return; if(!categories.includes(v)){ categories.push(v); save(CATKEY,categories); } $('#newCat').value=''; initUI(); };
+$('#exportBtn').onclick=()=>{ const head='datetime,category,minutes\n'; const rows=logs.map(x=>`${new Date(x.at).toISOString()},${String(x.category).replaceAll(',',' ')},${Math.round(x.ms/60000)}`).join('\n'); const blob=new Blob([head+rows],{type:'text/csv'}); const a=Object.assign(document.createElement('a'),{href:URL.createObjectURL(blob),download:'pomodoro_logs.csv'}); a.click(); URL.revokeObjectURL(a.href); };
+$('#clearBtn').onclick=()=>{ if(confirm('履歴をすべて削除しますか？')){ logs=[]; save(KEY,logs); renderLogs(); drawDailyChart(); } };
+$('#workMin').oninput=()=>{ if(mode==='idle'){ updateDisplay((+$('#workMin').value||25)*60*1000) } };
 
 initUI();
 </script>
 </body>
 </html>
-/* ---- 小さな整え ---- */
-.wrap{max-width: 980px}
-.card{border-radius: 14px}
-.row button, .row input, .row select{height: 40px}
-.timer{letter-spacing: .02em}
-.muted{color: var(--muted)}
-/* キャンバスは横幅にフィット */
-canvas{width:100%; height:auto; display:block}
