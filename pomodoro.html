@@ -7,23 +7,22 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;600;700&family=Noto+Serif+JP:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#f7f8fb; --fg:#0b1020; --muted:#5a6473;
-    --card:#ffffff; --line:#e6eaf1;
+    --bg:#ffffff; --fg:#0b1020; --muted:#5a6473;
+    --card:rgba(255,255,255,.20); /* 既定：透過白20% */
+    --line:#e6eaf1;
     --brand:#5cc9ee; --brand2:#9aa7ff;
     --radius:12px; --shadow:0 8px 18px rgba(20,30,60,.06);
     --wrap:1000px; --btnh:44px;
 
-    /* UIは常に Sans／タイマー数字は選択に連動(var(--font-timer)) */
     --font:"Noto Sans JP",system-ui,-apple-system,"Segoe UI",Roboto,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif;
     --font-timer:"Noto Sans JP",system-ui,-apple-system,"Segoe UI",Roboto,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif;
 
-    --ui-fg:var(--fg);
+    --ui-fg:#111827;
     --timer-box-h:clamp(220px,36vw,360px);
 
     --field-bg:#ffffff; --field-fg:var(--ui-fg);
     --field-border:#e5e7eb; --field-focus:#7dd3fc;
 
-    /* アプリバー用：個別指定があれば --appbar-bg を採用 */
     --appbar-bg: color-mix(in oklab, var(--bg) 82%, transparent);
   }
 
@@ -35,41 +34,26 @@
   .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
   .muted{color:var(--muted)}
 
-  /* App bar */
-  .appbar{
-    position:sticky;top:0;z-index:10;backdrop-filter:blur(8px);
-    background: var(--appbar-bg);
-    border:1px solid var(--line);border-radius:16px;padding:10px 12px;margin-bottom:12px;
-    display:flex;justify-content:space-between;align-items:center
-  }
+  .appbar{position:sticky;top:0;z-index:10;backdrop-filter:blur(8px);
+    background:var(--appbar-bg);border:1px solid var(--line);border-radius:16px;padding:10px 12px;margin-bottom:12px;
+    display:flex;justify-content:space-between;align-items:center}
   .logo{font-weight:800}
 
-  /* tabs（visitedで紫にならない＆下線消し） */
-  .tabs a{
-    color:var(--ui-fg) !important; text-decoration:none !important;
-    border:1px solid transparent;
-    display:inline-flex; gap:6px; align-items:center;
-    padding:.45rem .7rem; border-radius:10px;
-  }
-  .tabs a:visited{ color:var(--ui-fg) !important; }
-  .tabs a:hover{ opacity:.9; }
-  .tabs a.active{
-    color:var(--ui-fg) !important;
-    border-color:var(--line);
-    background:color-mix(in oklab,var(--card) 40%, transparent);
-  }
+  .tabs a{color:var(--ui-fg) !important;text-decoration:none !important;border:1px solid transparent;
+    display:inline-flex;gap:6px;align-items:center;padding:.45rem .7rem;border-radius:10px}
+  .tabs a:visited{color:var(--ui-fg) !important}
+  .tabs a:hover{opacity:.9}
+  .tabs a.active{color:var(--ui-fg) !important;border-color:var(--line);
+    background:color-mix(in oklab,var(--bg) 10%, transparent)}
 
-  /* inputs / buttons */
   select,input,button{height:var(--btnh);padding:.6rem .8rem;border:1px solid var(--field-border);border-radius:10px;background:var(--field-bg);color:var(--field-fg)}
   input[type=number]{width:88px}
-  select{appearance:none;background-clip:padding-box}
   input::placeholder{color:color-mix(in oklab,var(--field-fg) 70%,var(--field-bg) 30%)}
   select:focus,input:focus,button:focus{outline:none;border-color:var(--field-focus);box-shadow:0 0 0 3px color-mix(in oklab,var(--field-focus) 35%,transparent)}
   .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;cursor:pointer}
   .primary{background:linear-gradient(135deg,var(--brand),var(--brand2));color:#081018;border:none;font-weight:700}
   .danger{border-color:#ff6b6b}
 
-  /* timer / clock */
   .timer-wrap{display:flex;flex-direction:column;align-items:center;padding:56px 8px 18px}
   .timer-box{position:relative;width:min(92vw,780px);height:var(--timer-box-h);display:flex;align-items:center;justify-content:center;border-radius:18px;overflow:hidden;margin:20px 0 32px}
   .timer-bg{position:absolute;inset:0;background-size:cover;background-position:center;opacity:.4;pointer-events:none;filter:saturate(.9) blur(.3px)}
@@ -159,21 +143,29 @@
         <label>フォント：
           <select id="fontSel"><option value="sans">Noto Sans JP</option><option value="serif">Noto Serif JP</option></select>
         </label>
-        <label>配色：
+
+        <!-- 文字色のみ切替 -->
+        <label>フォントカラー：
           <select id="colorSel">
-            <option value="white">① 背景#FFFFFF / 文字#000000</option>
-            <option value="navyred">② 背景#162E3A / 文字#F52838</option>
-            <option value="sage">③ 背景#A6B5A5 / 文字#262724</option>
+            <option value="type1">① #000000</option>
+            <option value="type2">② #F52838</option>
+            <option value="type3">③ #262724</option>
           </select>
         </label>
+
         <button class="btn" id="resetTheme">初期に戻す</button>
       </div>
 
-      <!-- 個別色４種 -->
+      <!-- 個別色（背景/タイマー/カード/アプリバー + 透過） -->
       <div class="row" style="gap:12px;margin-top:10px">
         <label>背景色：<input type="color" id="bgColor" value="#ffffff" title="背景色（全体）"></label>
-        <label>タイマー色：<input type="color" id="timerColor" value="#000000" title="タイマーの数字とアイコン色"></label>
+        <label>タイマー色：<input type="color" id="timerColor" value="#000000" title="タイマーの数字とアイコン色（任意）"></label>
+
         <label>カード背景色：<input type="color" id="cardColor" value="#ffffff" title="カード（ボックス）の背景色"></label>
+        <label style="display:inline-flex;align-items:center;gap:6px">
+          <input type="checkbox" id="cardTrans" checked> 透過（白20%）
+        </label>
+
         <label>アプリバー色：<input type="color" id="appbarColor" value="#ffffff" title="アプリバーの背景色"></label>
         <button class="btn" id="applyColors">適用</button>
         <button class="btn" id="clearColors">個別色をクリア</button>
@@ -215,49 +207,56 @@ const BGOVR_KEY='pomodoro.override.bg.v1';
 const FGOVR_KEY='pomodoro.override.fg.v1';
 const CARDOVR_KEY='pomodoro.override.card.v1';
 const APPBAROVR_KEY='pomodoro.override.appbar.v1';
+const CARDTRANS_KEY='pomodoro.override.cardtrans.v1';
 const $=s=>document.querySelector(s), $$=s=>document.querySelectorAll(s);
 const pad=n=>String(n).padStart(2,'0');
 function load(k){ try{ return JSON.parse(localStorage.getItem(k)) }catch{ return null } }
 function save(k,v){ localStorage.setItem(k, JSON.stringify(v)) }
 function escapeHtml(s){return (s||'').replace(/[&<>"']/g,m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[m]))}
 
+/* 文字色プリセット（数字とアイコンの色） */
+const FONT_COLORS={ type1:'#000000', type2:'#F52838', type3:'#262724' };
 const FONTS={sans:'"Noto Sans JP",system-ui,-apple-system,"Segoe UI",Roboto,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif',
              serif:'"Noto Serif JP",serif'};
-const COLORS={white:{bg:'#FFFFFF',fg:'#000000',line:'#E5E7EB',card:'#FFFFFF'},
-              navyred:{bg:'#162E3A',fg:'#F52838',line:'#223844',card:'#1B3643'},
-              sage:{bg:'#A6B5A5',fg:'#262724',line:'#CFD6CF',card:'#FFFFFF'}};
+
+/* 輝度計算（背景色に応じてUI文字色を自動調整） */
+function hexToRgb(hex){ const m=(hex||'').trim().match(/^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i); return m?{r:parseInt(m[1],16),g:parseInt(m[2],16),b:parseInt(m[3],16)}:null; }
+function relLum({r,g,b}){ const f=v=>{v/=255;return v<=0.03928?v/12.92:Math.pow((v+0.055)/1.055,2.4)}; return 0.2126*f(r)+0.7152*f(g)+0.0722*f(b); }
 
 /* ===== appearance ===== */
 function applyAppearance(fontKey, colorKey){
-  const c=COLORS[colorKey]||COLORS.white;
   const r=document.documentElement.style;
 
-  // UIは常に Sans、数字は選択に連動
+  // UIはSans固定、数字のみ切替
   r.setProperty('--font', FONTS.sans);
   r.setProperty('--font-timer', fontKey==='serif' ? FONTS.serif : FONTS.sans);
 
-  r.setProperty('--bg', c.bg); r.setProperty('--fg', c.fg);
-  r.setProperty('--line', c.line); r.setProperty('--card', c.card);
-  const isNavy=(colorKey==='navyred');
-  r.setProperty('--ui-fg', isNavy ? '#FFFFFF' : c.fg);
+  // 数字・アイコン色（プリセット）
+  const fg = load(FGOVR_KEY) || FONT_COLORS[colorKey] || FONT_COLORS.type1;
+  r.setProperty('--fg', fg);
 
-  // 入力欄
-  if(isNavy){ r.setProperty('--field-bg','#0f1e26'); r.setProperty('--field-fg','#ffffff'); r.setProperty('--field-border','#355560'); r.setProperty('--field-focus','#68c6ff'); }
-  else if(colorKey==='white'){ r.setProperty('--field-bg','#ffffff'); r.setProperty('--field-fg','#111827'); r.setProperty('--field-border','#e5e7eb'); r.setProperty('--field-focus','#7dd3fc'); }
-  else{ r.setProperty('--field-bg','#ffffff'); r.setProperty('--field-fg',c.fg); r.setProperty('--field-border','#cfd6cf'); r.setProperty('--field-focus','#7dd3fc'); }
+  // 背景（ピッカー値 or 既定）
+  const bg = load(BGOVR_KEY) || '#FFFFFF';
+  r.setProperty('--bg', bg);
 
-  r.setProperty('--muted', isNavy ? '#E6E6E6' : (colorKey==='white' ? '#5a6473' : 'color-mix(in oklab, var(--fg) 70%, var(--bg) 30%)'));
-  $('#timerBgPreview').nextElementSibling.style.color=c.fg;
+  // UI文字色・入力欄トーン
+  const rgb = hexToRgb(bg); const dark = rgb && relLum(rgb)<0.5;
+  r.setProperty('--ui-fg', dark ? '#FFFFFF' : '#111827');
+  if(dark){ r.setProperty('--field-bg','#0f1e26'); r.setProperty('--field-fg','#ffffff'); r.setProperty('--field-border','#355560'); r.setProperty('--field-focus','#68c6ff'); r.setProperty('--muted','#E6E6E6'); }
+  else   { r.setProperty('--field-bg','#ffffff'); r.setProperty('--field-fg','#111827'); r.setProperty('--field-border','#e5e7eb'); r.setProperty('--field-focus','#7dd3fc'); r.setProperty('--muted','#5a6473'); }
 
-  // 個別色があれば上書き
-  const bgOv   = load(BGOVR_KEY);
-  const fgOv   = load(FGOVR_KEY);
+  // カード（透過ONなら半透明白20%、OFFならピッカー値）
+  const trans = load(CARDTRANS_KEY); const transOn = (trans===null?true:!!trans);
   const cardOv = load(CARDOVR_KEY);
-  const appOv  = load(APPBAROVR_KEY);
-  if(bgOv)   r.setProperty('--bg', bgOv);
-  if(fgOv)   r.setProperty('--fg', fgOv);
-  if(cardOv) r.setProperty('--card', cardOv);
-  if(appOv)  r.setProperty('--appbar-bg', appOv);
+  r.setProperty('--card', transOn ? 'rgba(255,255,255,.20)' : (cardOv || '#FFFFFF'));
+
+  // アプリバー
+  const app = load(APPBAROVR_KEY);
+  r.setProperty('--appbar-bg', app || 'color-mix(in oklab, var(--bg) 82%, transparent)');
+
+  // プレビューの数字色
+  const pv = document.querySelector('#timerBgPreview')?.nextElementSibling;
+  if(pv) pv.style.color = fg;
 
   save(FONTKEY,fontKey); save(COLORKEY,colorKey);
 }
@@ -278,17 +277,20 @@ function renderCategoryOptions(selected){
 }
 function initUI(){
   renderCategoryOptions();
-  const f=load(FONTKEY)||'sans', col=load(COLORKEY)||'white';
+  const f=load(FONTKEY)||'sans', col=load(COLORKEY)||'type1';
   $('#fontSel').value=f; $('#colorSel').value=col; applyAppearance(f,col);
+
   const savedBg=load(BGKEY); if(savedBg) setTimerBg(savedBg);
 
   // 個別色UIへ反映
-  const bgOvLoad=load(BGOVR_KEY), fgOvLoad=load(FGOVR_KEY);
-  const cardOvLoad=load(CARDOVR_KEY), appOvLoad=load(APPBAROVR_KEY);
+  const bgOvLoad=load(BGOVR_KEY), fgOvLoad=load(FGOVR_KEY),
+        cardOvLoad=load(CARDOVR_KEY), appOvLoad=load(APPBAROVR_KEY),
+        cardTransLoad=load(CARDTRANS_KEY);
   if(bgOvLoad)   $('#bgColor').value=bgOvLoad;
   if(fgOvLoad)   $('#timerColor').value=fgOvLoad;
   if(cardOvLoad) $('#cardColor').value=cardOvLoad;
   if(appOvLoad)  $('#appbarColor').value=appOvLoad;
+  $('#cardTrans').checked = (cardTransLoad===null?true:!!cardTransLoad);
 
   const wm=(+$('#workMin').value||25)*60*1000; updateDisplay(wm); updateStatus('停止中');
   setTimerAppearance(); renderLogs(); drawDailyChart(); setupTabs();
@@ -314,9 +316,7 @@ function setupTabs(){
 const two=n=>String(n).padStart(2,'0');
 function renderClock(){
   const now=new Date();
-  const hh=two(now.getHours()), mm=two(now.getMinutes()), ss=two(now.getSeconds());
-  $('#clockDisplay').textContent=`${hh}:${mm}:${ss}`;
-  // yyyy mm/dd (ddd)
+  $('#clockDisplay').textContent=`${two(now.getHours())}:${two(now.getMinutes())}:${two(now.getSeconds())}`;
   const y=now.getFullYear(), mo=two(now.getMonth()+1), d=two(now.getDate());
   const wd=["日","月","火","水","木","金","土"][now.getDay()];
   $('#clockDate').textContent=`${y} ${mo}/${d} (${wd})`;
@@ -351,27 +351,30 @@ function drawDailyChart(){ const cvs=document.getElementById('dailyChart'); if(!
 document.getElementById('rangeSel')?.addEventListener('change', e=>{ chartRange=parseInt(e.target.value,10)||14; document.getElementById('rangeInfo').textContent=chartRange; drawDailyChart(); });
 
 /* ===== customize binds ===== */
-$('#fontSel').onchange=e=>applyAppearance(e.target.value,$('#colorSel').value);
-$('#colorSel').onchange=e=>applyAppearance($('#fontSel').value,e.target.value);
+$('#fontSel').onchange  = e => applyAppearance(e.target.value,$('#colorSel').value);
+$('#colorSel').onchange = e => applyAppearance($('#fontSel').value,e.target.value);
 $('#resetTheme').onclick=()=>{ 
-  $('#fontSel').value='sans'; $('#colorSel').value='white';
-  [BGOVR_KEY,FGOVR_KEY,CARDOVR_KEY,APPBAROVR_KEY].forEach(k=>localStorage.removeItem(k));
+  $('#fontSel').value='sans'; $('#colorSel').value='type1';
+  [BGOVR_KEY,FGOVR_KEY,CARDOVR_KEY,APPBAROVR_KEY,CARDTRANS_KEY].forEach(k=>localStorage.removeItem(k));
   $('#bgColor').value='#ffffff'; $('#timerColor').value='#000000';
-  $('#cardColor').value='#ffffff'; $('#appbarColor').value='#ffffff';
-  applyAppearance('sans','white'); 
+  $('#cardColor').value='#ffffff'; $('#appbarColor').value='#ffffff'; $('#cardTrans').checked=true;
+  applyAppearance('sans','type1'); 
 };
+
 $('#bgFile').onchange=e=>{ const f=e.target.files?.[0]; if(!f) return; const reader=new FileReader(); reader.onload=()=>{ const dataUrl=reader.result; setTimerBg(dataUrl); save(BGKEY,dataUrl); }; reader.readAsDataURL(f); };
 $('#clearBg').onclick=()=>{ setTimerBg(null); localStorage.removeItem(BGKEY); };
 
 $('#applyColors').onclick=()=>{ 
   save(BGOVR_KEY,   $('#bgColor').value);
-  save(FGOVR_KEY,   $('#timerColor').value);
+  save(FGOVR_KEY,   $('#timerColor').value);   // 任意で直接上書きしたい場合
   save(CARDOVR_KEY, $('#cardColor').value);
   save(APPBAROVR_KEY,$('#appbarColor').value);
+  save(CARDTRANS_KEY,$('#cardTrans').checked);
   applyAppearance($('#fontSel').value,$('#colorSel').value); 
 };
 $('#clearColors').onclick=()=>{ 
-  [BGOVR_KEY,FGOVR_KEY,CARDOVR_KEY,APPBAROVR_KEY].forEach(k=>localStorage.removeItem(k));
+  [BGOVR_KEY,FGOVR_KEY,CARDOVR_KEY,APPBAROVR_KEY,CARDTRANS_KEY].forEach(k=>localStorage.removeItem(k));
+  $('#cardTrans').checked = true;
   applyAppearance($('#fontSel').value,$('#colorSel').value); 
 };
 
