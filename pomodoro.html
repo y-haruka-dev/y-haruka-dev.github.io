@@ -445,4 +445,90 @@ $('#addCat').onclick=()=>{
   }
   $('#newCat').value='';
 };
-/* ▼*
+/* ▼ 削除：選択中のカテゴリを削除（最低1件は残す） */
+$('#delCat').onclick=()=>{
+  const sel=$('#category').value;
+  if(!sel) return;
+  if(categories.length<=1){ alert('カテゴリは最低1つ必要です。'); return; }
+  if(!confirm(`「${sel}」を削除しますか？`)) return;
+  categories = categories.filter(c=>c!==sel);
+  save(CATKEY,categories);
+  renderCategoryOptions(categories[0]);
+};
+
+/* ===== Logs ===== */
+function fmtMin(ms){ return `${Math.round(ms/60000)}分` }
+function renderLogs(){
+  const tb=$('#logTable tbody'); tb.innerHTML=''; let byCat={};
+  for(const x of logs){
+    byCat[x.category]=(byCat[x.category]||0)+x.ms;
+    const tr=document.createElement('tr'); const d=new Date(x.at);
+    tr.innerHTML=`<td>${d.toLocaleString()}</td><td>${escapeHtml(x.category)}</td><td class="right">${fmtMin(x.ms)}</td>`;
+    tb.appendChild(tr);
+  }
+  const pairs=Object.entries(byCat).map(([k,v])=>`${k}:${fmtMin(v)}`).join(' ／ ');
+  $('#totals').textContent=pairs?`カテゴリ別合計 → ${pairs}`:'まだ記録はありません';
+}
+$('#exportBtn').onclick=()=>{ const head='datetime,category,minutes\n'; const rows=logs.map(x=>`${new Date(x.at).toISOString()},${String(x.category).replaceAll(',',' ')},${Math.round(x.ms/60000)}`).join('\n'); const blob=new Blob([head+rows],{type:'text/csv'}); const a=Object.assign(document.createElement('a'),{href:URL.createObjectURL(blob),download:'pomodoro_logs.csv'}); a.click(); URL.revokeObjectURL(a.href); };
+$('#clearBtn').onclick=()=>{ if(confirm('履歴をすべて削除しますか？')){ logs=[]; save(KEY,logs); renderLogs(); drawDailyChart(); } };
+
+/* ===== Chart (pure canvas) ===== */
+let chartRange=14; const dpr=window.devicePixelRatio||1;
+function drawDailyChart(){
+  const cvs=document.getElementById('dailyChart'); if(!cvs) return;
+  const ctx=cvs.getContext('2d');
+  const cssW=cvs.clientWidth||600, cssH=parseInt(cvs.getAttribute('height'))||220;
+  cvs.width=Math.round(cssW*dpr); cvs.height=Math.round(cssH*dpr); ctx.setTransform(dpr,0,0,dpr,0,0);
+
+  const today=new Date(); today.setHours(0,0,0,0);
+  const labels=[]; for(let i=chartRange-1;i>=0;i--){ const d=new Date(today); d.setDate(today.getDate()-i); labels.push(`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`); }
+  const perDay=Object.fromEntries(labels.map(k=>[k,0]));
+  for(const x of logs){ const d=new Date(x.at); const k=`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; if(k in perDay) perDay[k]+=Math.round(x.ms/60000); }
+  const values=labels.map(k=>perDay[k]); const maxV=Math.max(60,...values);
+
+  const P={l:40,r:12,t:16,b:26}, W=cssW-P.l-P.r, H=cssH-P.t-P.b;
+  ctx.clearRect(0,0,cssW,cssH);
+  ctx.strokeStyle='rgba(120,130,150,.28)'; ctx.lineWidth=1;
+  ctx.font='12px system-ui,-apple-system,Segoe UI,Roboto,sans-serif';
+  ctx.fillStyle=getComputedStyle(document.body).getPropertyValue('--muted')||'#6b7280';
+  for(let i=0;i<=5;i++){ const y=P.t+H*(i/5); const v=Math.round(maxV*(1-i/5)); ctx.beginPath(); ctx.moveTo(P.l,y); ctx.lineTo(P.l+W,y); ctx.stroke(); ctx.fillText(String(v),8,y+4); }
+
+  const gap=4, barW=Math.max(4,(W-gap*(labels.length-1))/labels.length);
+  const brand=getComputedStyle(document.body).getPropertyValue('--brand')||'#5cc9ee';
+  const brand2=getComputedStyle(document.body).getPropertyValue('--brand2')||'#9aa7ff';
+
+  for(let i=0;i<labels.length;i++){
+    const x=P.l+i*(barW+gap); const h=(values[i]/maxV)*H; const y=P.t+(H-h);
+    const grad=ctx.createLinearGradient(0,y,0,y+h); grad.addColorStop(0,brand.trim()); grad.addColorStop(1,brand2.trim());
+    ctx.fillStyle=grad; ctx.fillRect(x,y,barW,h);
+    if(labels.length<=14 ? i%2===0 : i%5===0){ const lab=labels[i].slice(5); ctx.fillStyle=getComputedStyle(document.body).getPropertyValue('--muted')||'#6b7280'; ctx.fillText(lab,x,P.t+H+14); }
+  }
+  const sum=values.reduce((a,b)=>a+b,0); ctx.fillStyle=getComputedStyle(document.body).getPropertyValue('--muted')||'#6b7280'; ctx.fillText(`計 ${sum} 分`, cssW-80, P.t+12);
+}
+document.getElementById('rangeSel')?.addEventListener('change', e=>{ chartRange=parseInt(e.target.value,10)||14; document.getElementById('rangeInfo').textContent=chartRange; drawDailyChart(); });
+
+/* ===== Customize bindings ===== */
+$('#fontSel').onchange = (e)=> applyAppearance(e.target.value, $('#colorSel').value);
+$('#colorSel').onchange = (e)=> applyAppearance($('#fontSel').value, e.target.value);
+$('#resetTheme').onclick = ()=>{ $('#fontSel').value='sans'; $('#colorSel').value='white'; applyAppearance('sans','white'); };
+
+$('#bgFile').onchange = (e)=>{
+  const f = e.target.files?.[0]; if(!f) return;
+  const reader = new FileReader();
+  reader.onload = ()=>{ const dataUrl = reader.result; setTimerBg(dataUrl); save(BGKEY, dataUrl); };
+  reader.readAsDataURL(f);
+};
+$('#clearBg').onclick = ()=>{ setTimerBg(null); localStorage.removeItem(BGKEY); };
+
+/* ===== Sound ===== */
+function beep(){ try{ const a=new (window.AudioContext||window.webkitAudioContext)(); const o=a.createOscillator(), g=a.createGain(); o.connect(g); g.connect(a.destination); o.type='sine'; o.frequency.value=880; g.gain.setValueAtTime(0.05,a.currentTime); o.start(); setTimeout(()=>{ o.stop(); a.close(); },250);}catch{} }
+
+/* ===== Timer control ===== */
+$('#startBtn').onclick=startTimer; $('#pauseBtn').onclick=pauseTimer; $('#resumeBtn').onclick=resumeTimer;
+$('#stopBtn').onclick=stopAndLog; $('#skipBreak').onclick=()=>{ if(mode==='break') toWork(); };
+$('#workMin').oninput=()=>{ if(mode==='idle'){ updateDisplay((+$('#workMin').value||25)*60*1000) } };
+
+initUI();
+</script>
+</body>
+</html>
