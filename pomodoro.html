@@ -5,8 +5,6 @@
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>ポモドーロタイマー</title>
 <meta name="description" content="カテゴリ別に作業時間を記録。履歴・日別集計・フォント/配色/背景カスタマイズ対応。">
-
-<!-- Noto Fonts -->
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;600;700&family=Noto+Serif+JP:wght@400;600;700&display=swap" rel="stylesheet">
 
 <style>
@@ -16,24 +14,27 @@
     --brand:#5cc9ee; --brand2:#9aa7ff;
     --radius:12px; --shadow:0 8px 18px rgba(20,30,60,.06);
     --wrap:1000px; --btnh:44px;
-    --font: "Noto Sans JP", system-ui, -apple-system, "Segoe UI", Roboto, "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
 
-    --ui-fg: var(--fg); /* ← 画面の通常テキスト色（配色②だけ白に切替） */
-    --timer-box-h: clamp(220px, 36vw, 360px);
+    /* フォント：UI全体と、タイマー専用 */
+    --font:"Noto Sans JP",system-ui,-apple-system,"Segoe UI",Roboto,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif;
+    --font-timer:"Noto Sans JP",system-ui,-apple-system,"Segoe UI",Roboto,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif;
+
+    /* UI文字色（配色②だけ白に） */
+    --ui-fg:var(--fg);
+
+    --timer-box-h:clamp(220px,36vw,360px);
+
+    /* 入力欄（可読性UP用） */
+    --field-bg:#ffffff;
+    --field-fg:var(--ui-fg);
+    --field-border:#e5e7eb;
+    --field-focus:#7dd3fc;
   }
-  @media (prefers-color-scheme: dark){
-    :root{ --shadow:0 10px 22px rgba(0,0,0,.18) }
-  }
+  @media (prefers-color-scheme: dark){ :root{ --shadow:0 10px 22px rgba(0,0,0,.18) } }
 
   *{box-sizing:border-box}
   html{font-size:17px}
-  body{
-    margin:0;
-    background:var(--bg);
-    color:var(--ui-fg); /* ← 通常テキストは ui 色を使う */
-    font-family:var(--font);
-    line-height:1.7;
-  }
+  body{margin:0;background:var(--bg);color:var(--ui-fg);font-family:var(--font);line-height:1.7}
   a{color:inherit;text-decoration:none}
   .wrap{max-width:var(--wrap);margin:auto;padding:16px}
   .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow)}
@@ -42,36 +43,49 @@
 
   /* App bar & Tabs */
   .appbar{position:sticky;top:0;z-index:10;backdrop-filter:blur(8px);
-    background:color-mix(in oklab, var(--bg) 82%, transparent);
+    background:color-mix(in oklab,var(--bg) 82%,transparent);
     border:1px solid var(--line);border-radius:16px;padding:10px 12px;margin-bottom:12px;
     display:flex;justify-content:space-between;align-items:center}
   .logo{font-weight:800}
   .tabs a{display:inline-flex;gap:6px;align-items:center;padding:.45rem .7rem;border-radius:10px;border:1px solid transparent}
   .tabs a.active{border-color:var(--line);background:linear-gradient(180deg,rgba(255,255,255,.05),transparent)}
 
-  /* Controls */
-  select,input,button{height:var(--btnh);padding:.6rem .8rem;border:1px solid var(--line);border-radius:10px;background:transparent;color:inherit}
+  /* Inputs / Selects / Buttons —— 高コントラスト */
+  select,input,button{
+    height:var(--btnh);
+    padding:.6rem .8rem;
+    border:1px solid var(--field-border);
+    border-radius:10px;
+    background:var(--field-bg);
+    color:var(--field-fg);
+  }
   input[type="number"]{width:88px}
+  select{appearance:none;background-clip:padding-box}
+  input::placeholder{color:color-mix(in oklab,var(--field-fg) 70%,var(--field-bg) 30%)}
+  select:focus,input:focus,button:focus{
+    outline:none;border-color:var(--field-focus);
+    box-shadow:0 0 0 3px color-mix(in oklab,var(--field-focus) 35%,transparent);
+  }
   button{cursor:pointer}
   .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px}
   .primary{background:linear-gradient(135deg,var(--brand),var(--brand2));color:#081018;border:none;font-weight:700}
   .danger{border-color:#ff6b6b}
 
-  /* Timer area */
+  /* Timer / Clock 共通レイアウト */
   .timer-wrap{display:flex;flex-direction:column;align-items:center;padding:56px 8px 18px}
   .timer-box{
-    position:relative;
-    width:min(92vw, 780px);
-    height:var(--timer-box-h);
-    display:flex; align-items:center; justify-content:center;
-    border-radius:18px; overflow:hidden;
-    margin:20px 0 32px;
+    position:relative;width:min(92vw,780px);height:var(--timer-box-h);
+    display:flex;align-items:center;justify-content:center;border-radius:18px;overflow:hidden;margin:20px 0 32px;
   }
-  .timer-bg{position:absolute; inset:0; background-size:cover; background-position:center; opacity:.4; pointer-events:none; filter:saturate(.9) blur(.3px)}
-  .timer{position:relative; font-weight:800; font-size:clamp(72px,14vw,140px); letter-spacing:.04em; text-align:center; margin:0; color:var(--fg);}  /* ← タイマーは常に --fg */
-  .timer.is-break{opacity:.25; filter:grayscale(.35) saturate(.5)}
+  .timer-bg{position:absolute;inset:0;background-size:cover;background-position:center;opacity:.4;pointer-events:none;filter:saturate(.9) blur(.3px)}
+  .timer{
+    position:relative;font-weight:800;font-size:clamp(72px,14vw,140px);
+    letter-spacing:.04em;text-align:center;margin:0;color:var(--fg);
+    font-family:var(--font-timer); /* タイマー/時計の数字は常に Noto Sans */
+  }
+  .timer.is-break{opacity:.25;filter:grayscale(.35) saturate(.5)}
   .btn-row{display:flex;gap:14px;justify-content:center;margin-top:22px;margin-bottom:28px}
-  .icon-btn{width:56px;height:56px;border-radius:14px; color:var(--fg);} /* ← アイコン色も常に --fg */
+  .icon-btn{width:56px;height:56px;border-radius:14px;color:var(--fg)}
   .icon{width:22px;height:22px}
 
   /* Table & canvas */
@@ -83,8 +97,6 @@
   /* Layout */
   .grid{display:grid;gap:14px}
   @media (min-width:600px){ .grid-2{grid-template-columns:1.2fr 1fr} }
-
-  /* a11y */
   :focus-visible{outline:2px solid #7aa2ff;outline-offset:2px}
   @media (prefers-reduced-motion:reduce){ .tabs a,.btn{transition:none} }
 </style>
@@ -98,6 +110,7 @@
         <a href="#logs"  data-tab="logs"  aria-controls="view-logs">履歴</a>
         <a href="#stats" data-tab="stats" aria-controls="view-stats">日別集計</a>
         <a href="#custom" data-tab="custom" aria-controls="view-custom">カスタマイズ</a>
+        <a href="#clock" data-tab="clock" aria-controls="view-clock">時計</a><!-- 追加 -->
       </nav>
       <span class="muted" id="status">停止中</span>
     </header>
@@ -216,6 +229,17 @@
         </div>
       </div>
     </section>
+
+    <!-- Clock -->
+    <section id="view-clock" data-view="clock" class="card" hidden>
+      <div class="timer-wrap">
+        <div class="timer-box">
+          <div class="timer-bg" id="clockBg"></div>
+          <div class="timer" id="clockDisplay" aria-live="polite">00:00:00</div>
+        </div>
+        <p class="muted" id="clockDate" style="text-align:center;margin-top:4px;"></p>
+      </div>
+    </section>
   </div>
 
 <script>
@@ -231,8 +255,8 @@ function escapeHtml(s){return (s||'').replace(/[&<>"']/g,m=>({ '&':'&amp;','<':'
 
 /* ===== Fonts & Colors ===== */
 const FONTS = {
-  sans: '"Noto Sans JP", system-ui, -apple-system, "Segoe UI", Roboto, "Hiragino Kaku Gothic ProN", Meiryo, sans-serif',
-  serif:'"Noto Serif JP", serif'
+  sans:'"Noto Sans JP",system-ui,-apple-system,"Segoe UI",Roboto,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif',
+  serif:'"Noto Serif JP",serif'
 };
 const COLORS = {
   white:   { bg:'#FFFFFF', fg:'#000000', line:'#E5E7EB', card:'#FFFFFF' },
@@ -240,26 +264,44 @@ const COLORS = {
   sage:    { bg:'#A6B5A5', fg:'#262724', line:'#CFD6CF', card:'#FFFFFF' }
 };
 
-/* ← ここが今回のポイント：配色②だけ通常テキストを白にし、タイマー/アイコンは赤を維持 */
+/* ===== Appearance ===== */
 function applyAppearance(fontKey, colorKey){
-  const f = FONTS[fontKey] || FONTS.sans;
   const c = COLORS[colorKey] || COLORS.white;
   const r = document.documentElement.style;
 
-  // フォント
-  r.setProperty('--font', f);
+  // UI全体のフォント（選択に従う）
+  r.setProperty('--font', fontKey === 'serif' ? FONTS.serif : FONTS.sans);
+  // タイマー/時計のフォントは常に Noto Sans
+  r.setProperty('--font-timer', FONTS.sans);
 
-  // タイマー＆アイコン用の色として --fg、背景は --bg
+  // 配色
   r.setProperty('--bg', c.bg);
-  r.setProperty('--fg', c.fg);
+  r.setProperty('--fg', c.fg);     // タイマー数字＆操作アイコンの色
   r.setProperty('--line', c.line);
   r.setProperty('--card', c.card);
 
-  // 配色②（navyred）のときだけ通常テキスト色を白へ
+  // 配色②のときは UI文字を白へ
   const isNavy = (colorKey === 'navyred');
   r.setProperty('--ui-fg', isNavy ? '#FFFFFF' : c.fg);
 
-  // 補助テキスト
+  // 入力欄の配色（可読性最優先）
+  if (isNavy){
+    r.setProperty('--field-bg', '#0f1e26');
+    r.setProperty('--field-fg', '#ffffff');
+    r.setProperty('--field-border', '#355560');
+    r.setProperty('--field-focus', '#68c6ff');
+  }else if(colorKey==='white'){
+    r.setProperty('--field-bg', '#ffffff');
+    r.setProperty('--field-fg', '#111827');
+    r.setProperty('--field-border', '#e5e7eb');
+    r.setProperty('--field-focus', '#7dd3fc');
+  }else{ // sage
+    r.setProperty('--field-bg', '#ffffff');
+    r.setProperty('--field-fg', c.fg);
+    r.setProperty('--field-border', '#cfd6cf');
+    r.setProperty('--field-focus', '#7dd3fc');
+  }
+
   const muted = isNavy ? '#E6E6E6'
                        : (colorKey==='white' ? '#5a6473'
                                              : 'color-mix(in oklab, var(--fg) 70%, var(--bg) 30%)');
@@ -268,13 +310,14 @@ function applyAppearance(fontKey, colorKey){
   // プレビューの文字色
   $('#timerBgPreview').nextElementSibling.style.color = c.fg;
 
-  // 保存
   save(FONTKEY, fontKey); save(COLORKEY, colorKey);
 }
+
+/* 背景をタイマー/時計/プレビューへ一括適用 */
 function setTimerBg(dataUrl){
-  const el = $('#timerBg'), pv = $('#timerBgPreview');
-  if(dataUrl){ el.style.backgroundImage=`url('${dataUrl}')`; pv.style.backgroundImage=`url('${dataUrl}')`; }
-  else{ el.style.backgroundImage='none'; pv.style.backgroundImage='none'; }
+  const el = $('#timerBg'), pv = $('#timerBgPreview'), ck = $('#clockBg');
+  const set = (node)=>{ if(!node) return; node.style.backgroundImage = dataUrl ? `url('${dataUrl}')` : 'none'; };
+  set(el); set(pv); set(ck);
 }
 
 /* ===== State ===== */
@@ -302,16 +345,44 @@ function updateDisplay(ms){ const m=Math.floor(ms/60000), s=Math.floor((ms%60000
 function updateStatus(t){ $('#status').textContent=t }
 
 /* ===== Tabs ===== */
+let clockTimer = null;
 function setupTabs(){
   const show = (name)=>{
     $$('[data-view]').forEach(v=>v.hidden = (v.dataset.view!==name));
     $$('.tabs a').forEach(a=>a.classList.toggle('active', a.dataset.tab===name));
     history.replaceState(null,'', '#'+name);
+
+    // 時計の開始/停止
+    if(name==='clock'){ startClock(); } else { stopClock(); }
   };
   const hash = (location.hash||'#timer').replace('#','');
-  show(['timer','logs','stats','custom'].includes(hash)?hash:'timer');
+  show(['timer','logs','stats','custom','clock'].includes(hash)?hash:'timer');
   $$('.tabs a').forEach(a=>a.onclick=(e)=>{ e.preventDefault(); show(a.dataset.tab); });
 }
+
+/* ===== Clock (現在時刻) ===== */
+function two(n){ return String(n).padStart(2,'0'); }
+function renderClock(){
+  const now = new Date();
+  const hh = two(now.getHours());
+  const mm = two(now.getMinutes());
+  const ss = two(now.getSeconds());
+  const disp = `${hh}:${mm}:${ss}`;
+  const dateStr = now.toLocaleDateString(undefined, { year:'numeric', month:'long', day:'numeric', weekday:'long' });
+  const t = document.getElementById('clockDisplay');
+  const d = document.getElementById('clockDate');
+  if(t) t.textContent = disp;
+  if(d) d.textContent = dateStr;
+}
+function startClock(){
+  if(clockTimer) return;
+  // 背景を共有（保存済みがあれば流用）
+  const savedBg = load(BGKEY);
+  if(savedBg) setTimerBg(savedBg); // clockBg にも反映される
+  renderClock();
+  clockTimer = setInterval(renderClock, 1000);
+}
+function stopClock(){ if(clockTimer){ clearInterval(clockTimer); clockTimer=null; } }
 
 /* ===== Appearance by mode ===== */
 function setTimerAppearance(){ $('#display').classList.toggle('is-break', mode==='break'); }
@@ -448,7 +519,7 @@ $('#resetTheme').onclick = ()=>{ $('#fontSel').value='sans'; $('#colorSel').valu
 $('#bgFile').onchange = (e)=>{
   const f = e.target.files?.[0]; if(!f) return;
   const reader = new FileReader();
-  reader.onload = ()=>{ const dataUrl = reader.result; setTimerBg(dataUrl); localStorage.setItem(BGKEY, JSON.stringify(dataUrl)); };
+  reader.onload = ()=>{ const dataUrl = reader.result; setTimerBg(dataUrl); save(BGKEY, dataUrl); };
   reader.readAsDataURL(f);
 };
 $('#clearBg').onclick = ()=>{ setTimerBg(null); localStorage.removeItem(BGKEY); };
