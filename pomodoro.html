@@ -56,7 +56,7 @@
 
   .timer-wrap{display:flex;flex-direction:column;align-items:center;padding:56px 8px 18px}
   .timer-box{position:relative;width:min(92vw,780px);height:var(--timer-box-h);display:flex;align-items:center;justify-content:center;border-radius:18px;overflow:hidden;margin:20px 0 32px}
-  .timer-bg{position:absolute;inset:0;background-size:cover;background-position:center;opacity:.4;pointer-events:none;filter:saturate(.9) blur(.3px)}
+  .timer-bg{position:absolute;inset:0;background-size:cover;background-position:center;opacity:.4;pointer-events:none;filter:saturate(.9) blur(.3px)} /* ← 60%透過（不透明度0.4） */
   .timer{position:relative;font-weight:800;font-size:clamp(72px,14vw,140px);letter-spacing:.04em;text-align:center;margin:0;color:var(--fg);font-family:var(--font-timer)}
   .timer.is-break{opacity:.25;filter:grayscale(.35) saturate(.5)}
   .btn-row{display:flex;gap:14px;justify-content:center;margin-top:22px;margin-bottom:28px}
@@ -143,7 +143,6 @@
         <label>フォント：
           <select id="fontSel"><option value="sans">Noto Sans JP</option><option value="serif">Noto Serif JP</option></select>
         </label>
-
         <!-- 文字色のみ切替 -->
         <label>フォントカラー：
           <select id="colorSel">
@@ -152,7 +151,6 @@
             <option value="type3">③ #262724</option>
           </select>
         </label>
-
         <button class="btn" id="resetTheme">初期に戻す</button>
       </div>
 
@@ -161,7 +159,7 @@
         <label>背景色：<input type="color" id="bgColor" value="#ffffff" title="背景色（全体）"></label>
         <label>タイマー色：<input type="color" id="timerColor" value="#000000" title="タイマーの数字とアイコン色（任意）"></label>
 
-        <label>カード背景色：<input type="color" id="cardColor" value="#ffffff" title="カード（ボックス）の背景色"></label>
+        <label>カード背景色：<input type="color" id="cardColor" value="#ffffff" title="カードの背景色"></label>
         <label style="display:inline-flex;align-items:center;gap:6px">
           <input type="checkbox" id="cardTrans" checked> 透過（白20%）
         </label>
@@ -172,8 +170,10 @@
       </div>
 
       <div class="row" style="margin-top:12px">
-        <label>タイマー背景画像（40%表示）：<input id="bgFile" type="file" accept="image/*"></label>
+        <label>タイマー背景画像（60%透過）：<input id="bgFile" type="file" accept="image/*"></label>
         <button class="btn danger" id="clearBg">背景を削除</button>
+        <label>休憩用背景画像（60%透過）：<input id="bgBreakFile" type="file" accept="image/*"></label>
+        <button class="btn danger" id="clearBgBreak">休憩背景を削除</button>
         <span class="muted">※ 端末内に保存（localStorage）。</span>
       </div>
 
@@ -182,6 +182,10 @@
         <div class="timer-box" style="margin-top:10px">
           <div class="timer-bg" id="timerBgPreview"></div>
           <div class="timer" style="margin:0;padding:8px 0">00:00</div>
+        </div>
+        <div class="timer-box" style="margin-top:10px">
+          <div class="timer-bg" id="timerBgBreakPreview"></div>
+          <div class="timer" style="margin:0;padding:8px 0;opacity:.6">Break</div>
         </div>
       </div>
     </section>
@@ -202,7 +206,8 @@
 /* ===== helpers / keys ===== */
 const KEY='pomodoro.logs.v1', CATKEY='pomodoro.cats.v1';
 const FONTKEY='pomodoro.font.v1', COLORKEY='pomodoro.color.v1';
-const BGKEY='pomodoro.bg.v1';
+const BGKEY='pomodoro.bg.v1';               // 作業中の背景
+const BGKEY_BREAK='pomodoro.bg.break.v1';   // 休憩中の背景
 const BGOVR_KEY='pomodoro.override.bg.v1';
 const FGOVR_KEY='pomodoro.override.fg.v1';
 const CARDOVR_KEY='pomodoro.override.card.v1';
@@ -231,8 +236,9 @@ function applyAppearance(fontKey, colorKey){
   r.setProperty('--font', FONTS.sans);
   r.setProperty('--font-timer', fontKey==='serif' ? FONTS.serif : FONTS.sans);
 
-  // 数字・アイコン色（プリセット）
-  const fg = load(FGOVR_KEY) || FONT_COLORS[colorKey] || FONT_COLORS.type1;
+  // 数字・アイコン色（カスタムがあれば優先）
+  const fgOverride = load(FGOVR_KEY);
+  const fg = fgOverride || FONT_COLORS[colorKey] || FONT_COLORS.type1;
   r.setProperty('--fg', fg);
 
   // 背景（ピッカー値 or 既定）
@@ -260,10 +266,25 @@ function applyAppearance(fontKey, colorKey){
 
   save(FONTKEY,fontKey); save(COLORKEY,colorKey);
 }
-function setTimerBg(dataUrl){
+
+/* 背景画像の設定 */
+let workBgUrl = null, breakBgUrl = null;
+function setWorkBg(dataUrl){
+  workBgUrl = dataUrl || null;
   ['#timerBg','#timerBgPreview','#clockBg'].forEach(sel=>{
-    const n=document.querySelector(sel); if(n) n.style.backgroundImage=dataUrl?`url('${dataUrl}')`:'none';
+    const n=document.querySelector(sel); if(n) n.style.backgroundImage=workBgUrl?`url('${workBgUrl}')`:'none';
   });
+}
+function setBreakBg(dataUrl){
+  breakBgUrl = dataUrl || null;
+  const pv = document.querySelector('#timerBgBreakPreview');
+  if(pv) pv.style.backgroundImage = breakBgUrl?`url('${breakBgUrl}')`:'none';
+}
+function applyModeBg(){
+  const el = document.getElementById('timerBg');
+  if(!el) return;
+  if(mode==='break' && breakBgUrl){ el.style.backgroundImage = `url('${breakBgUrl}')`; }
+  else                           { el.style.backgroundImage = workBgUrl ? `url('${workBgUrl}')` : 'none'; }
 }
 
 /* ===== state ===== */
@@ -280,7 +301,9 @@ function initUI(){
   const f=load(FONTKEY)||'sans', col=load(COLORKEY)||'type1';
   $('#fontSel').value=f; $('#colorSel').value=col; applyAppearance(f,col);
 
-  const savedBg=load(BGKEY); if(savedBg) setTimerBg(savedBg);
+  // 背景画像（作業/休憩）
+  const savedWork=load(BGKEY); if(savedWork) setWorkBg(savedWork);
+  const savedBreak=load(BGKEY_BREAK); if(savedBreak) setBreakBg(savedBreak);
 
   // 個別色UIへ反映
   const bgOvLoad=load(BGOVR_KEY), fgOvLoad=load(FGOVR_KEY),
@@ -321,19 +344,19 @@ function renderClock(){
   const wd=["日","月","火","水","木","金","土"][now.getDay()];
   $('#clockDate').textContent=`${y} ${mo}/${d} (${wd})`;
 }
-function startClock(){ if(clockTimer) return; const bg=load(BGKEY); if(bg) setTimerBg(bg); renderClock(); clockTimer=setInterval(renderClock,1000); }
+function startClock(){ if(clockTimer) return; applyModeBg(); renderClock(); clockTimer=setInterval(renderClock,1000); }
 function stopClock(){ if(clockTimer){ clearInterval(clockTimer); clockTimer=null; } }
 
 /* ===== timer ===== */
 function setTimerAppearance(){ $('#display').classList.toggle('is-break',mode==='break'); }
 function enableRunning(on){ $('#startBtn').disabled=on; $('#pauseBtn').disabled=!on; $('#stopBtn').disabled=!on; $('#resumeBtn').disabled=true; $('#skipBreak').disabled=true; }
-function startTimer(){ if(mode!=='idle') return; const wm=(+$('#workMin').value||25)*60*1000; remain=wm; elapsedWork=0; startAt=Date.now(); mode='work'; setTimerAppearance(); enableRunning(true); updateStatus('作業中'); tick(); }
+function startTimer(){ if(mode!=='idle') return; const wm=(+$('#workMin').value||25)*60*1000; remain=wm; elapsedWork=0; startAt=Date.now(); mode='work'; setTimerAppearance(); applyModeBg(); enableRunning(true); updateStatus('作業中'); tick(); }
 function pauseTimer(){ if(mode!=='work') return; mode='paused'; elapsedWork+=Date.now()-startAt; clearInterval(ticker); $('#pauseBtn').disabled=true; $('#resumeBtn').disabled=false; updateStatus('一時停止'); }
 function resumeTimer(){ if(mode!=='paused') return; mode='work'; startAt=Date.now(); $('#pauseBtn').disabled=false; $('#resumeBtn').disabled=true; updateStatus('作業中'); tick(); }
 function stopAndLog(){ let workMs=elapsedWork; if(mode==='work') workMs+=Date.now()-startAt; if(workMs>=1000){ logs.unshift({at:Date.now(),category:$('#category').value,ms:workMs}); save(KEY,logs); } resetAll(); renderLogs(); drawDailyChart(); }
-function toBreak(){ const bm=(+$('#breakMin').value||5)*60*1000; remain=bm; startAt=Date.now(); mode='break'; setTimerAppearance(); updateStatus('休憩中'); $('#pauseBtn').disabled=true; $('#resumeBtn').disabled=true; $('#skipBreak').disabled=false; tick(); }
-function toWork(){ const wm=(+$('#workMin').value||25)*60*1000; remain=wm; startAt=Date.now(); mode='work'; setTimerAppearance(); updateStatus('作業中'); $('#pauseBtn').disabled=false; $('#resumeBtn').disabled=true; $('#skipBreak').disabled=true; tick(); }
-function resetAll(){ clearInterval(ticker); ticker=null; mode='idle'; remain=0; elapsedWork=0; setTimerAppearance(); $('#pauseBtn').disabled=true; $('#resumeBtn').disabled=true; $('#stopBtn').disabled=true; $('#skipBreak').disabled=true; $('#startBtn').disabled=false; const wm=(+$('#workMin').value||25)*60*1000; updateDisplay(wm); updateStatus('停止中'); }
+function toBreak(){ const bm=(+$('#breakMin').value||5)*60*1000; remain=bm; startAt=Date.now(); mode='break'; setTimerAppearance(); applyModeBg(); updateStatus('休憩中'); $('#pauseBtn').disabled=true; $('#resumeBtn').disabled=true; $('#skipBreak').disabled=false; tick(); }
+function toWork(){ const wm=(+$('#workMin').value||25)*60*1000; remain=wm; startAt=Date.now(); mode='work'; setTimerAppearance(); applyModeBg(); updateStatus('作業中'); $('#pauseBtn').disabled=false; $('#resumeBtn').disabled=true; $('#skipBreak').disabled=true; tick(); }
+function resetAll(){ clearInterval(ticker); ticker=null; mode='idle'; remain=0; elapsedWork=0; setTimerAppearance(); applyModeBg(); $('#pauseBtn').disabled=true; $('#resumeBtn').disabled=true; $('#stopBtn').disabled=true; $('#skipBreak').disabled=true; $('#startBtn').disabled=false; const wm=(+$('#workMin').value||25)*60*1000; updateDisplay(wm); updateStatus('停止中'); }
 function tick(){ clearInterval(ticker); ticker=setInterval(()=>{ const left=Math.max(0,remain-(Date.now()-startAt)); updateDisplay(left); if(left<=0){ clearInterval(ticker); ticker=null; if(mode==='work'){ elapsedWork+=remain; toBreak(); beep(); } else if(mode==='break'){ toWork(); beep(); } } },250); }
 
 /* ===== categories ===== */
@@ -352,7 +375,10 @@ document.getElementById('rangeSel')?.addEventListener('change', e=>{ chartRange=
 
 /* ===== customize binds ===== */
 $('#fontSel').onchange  = e => applyAppearance(e.target.value,$('#colorSel').value);
-$('#colorSel').onchange = e => applyAppearance($('#fontSel').value,e.target.value);
+
+/* ← ここが効かない原因対策：プリセット変更時にカスタム色を解除 */
+$('#colorSel').onchange = e => { localStorage.removeItem(FGOVR_KEY); applyAppearance($('#fontSel').value,e.target.value); };
+
 $('#resetTheme').onclick=()=>{ 
   $('#fontSel').value='sans'; $('#colorSel').value='type1';
   [BGOVR_KEY,FGOVR_KEY,CARDOVR_KEY,APPBAROVR_KEY,CARDTRANS_KEY].forEach(k=>localStorage.removeItem(k));
@@ -361,12 +387,21 @@ $('#resetTheme').onclick=()=>{
   applyAppearance('sans','type1'); 
 };
 
-$('#bgFile').onchange=e=>{ const f=e.target.files?.[0]; if(!f) return; const reader=new FileReader(); reader.onload=()=>{ const dataUrl=reader.result; setTimerBg(dataUrl); save(BGKEY,dataUrl); }; reader.readAsDataURL(f); };
-$('#clearBg').onclick=()=>{ setTimerBg(null); localStorage.removeItem(BGKEY); };
+$('#bgFile').onchange=e=>{ const f=e.target.files?.[0]; if(!f) return; const reader=new FileReader();
+  reader.onload=()=>{ const dataUrl=reader.result; setWorkBg(dataUrl); save(BGKEY,dataUrl); applyModeBg(); };
+  reader.readAsDataURL(f);
+};
+$('#clearBg').onclick=()=>{ setWorkBg(null); localStorage.removeItem(BGKEY); applyModeBg(); };
+
+$('#bgBreakFile').onchange=e=>{ const f=e.target.files?.[0]; if(!f) return; const reader=new FileReader();
+  reader.onload=()=>{ const dataUrl=reader.result; setBreakBg(dataUrl); save(BGKEY_BREAK,dataUrl); applyModeBg(); };
+  reader.readAsDataURL(f);
+};
+$('#clearBgBreak').onclick=()=>{ setBreakBg(null); localStorage.removeItem(BGKEY_BREAK); applyModeBg(); };
 
 $('#applyColors').onclick=()=>{ 
   save(BGOVR_KEY,   $('#bgColor').value);
-  save(FGOVR_KEY,   $('#timerColor').value);   // 任意で直接上書きしたい場合
+  save(FGOVR_KEY,   $('#timerColor').value);   // 任意で数字色を固定
   save(CARDOVR_KEY, $('#cardColor').value);
   save(APPBAROVR_KEY,$('#appbarColor').value);
   save(CARDTRANS_KEY,$('#cardTrans').checked);
