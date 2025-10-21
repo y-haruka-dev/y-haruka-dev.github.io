@@ -143,7 +143,7 @@
         <label>フォント：
           <select id="fontSel"><option value="sans">Noto Sans JP</option><option value="serif">Noto Serif JP</option></select>
         </label>
-        <button class="btn" id="resetTheme">初期に戻す</button>
+        <!-- 「初期に戻す」ボタンは削除 -->
       </div>
 
       <div class="row" style="gap:12px;margin-top:10px">
@@ -154,6 +154,9 @@
 
         <!-- タイマー数字の色（独立） -->
         <label>タイマー色：<input type="color" id="timerColor" value="#000000" title="タイマーの数字色"></label>
+
+        <!-- ★ ここで改行してカード項目を次の段へ -->
+        <span style="flex-basis:100%;height:0"></span>
 
         <label>カード背景色：<input type="color" id="cardColor" value="#ffffff" title="カード（ボックス/アプリバー共通）"></label>
         <label style="display:inline-flex;align-items:center;gap:6px">
@@ -245,8 +248,8 @@ function applyAppearance(fontKey){
   const cardOv = load(CARDOVR_KEY);
   r.setProperty('--card', cardTransOn ? 'rgba(255,255,255,.20)' : (cardOv || '#FFFFFF'));
 
-  /* ★ ここがポイント：フォーム/アイコンの配色は “有効なカード色” を基準に判定 */
-  const basisColor = (!cardTransOn && cardOv) ? cardOv : bg; // 透過中は背景色を基準に
+  /* コントロール配色は“有効なカード色”を基準に判定 */
+  const basisColor = (!cardTransOn && cardOv) ? cardOv : bg;
   const darkOnCard = (hexToRgb(basisColor) && relLum(hexToRgb(basisColor))<0.5);
 
   if(darkOnCard){
@@ -254,13 +257,13 @@ function applyAppearance(fontKey){
     r.setProperty('--field-fg','#ffffff');
     r.setProperty('--field-border','#355560');
     r.setProperty('--field-focus','#68c6ff');
-    r.setProperty('--icons','#ffffff'); // アイコンもカード基準で見やすく
+    r.setProperty('--icons','#ffffff');
   }else{
     r.setProperty('--field-bg','#ffffff');
     r.setProperty('--field-fg','#111827');
     r.setProperty('--field-border','#e5e7eb');
     r.setProperty('--field-focus','#7dd3fc');
-    r.setProperty('--icons', ui);       // ライト時はUI色（通常ダーク）に揃える
+    r.setProperty('--icons', ui);
   }
 
   /* タイマー数字色（手動 or 既定黒） */
@@ -388,15 +391,9 @@ function drawDailyChart(){ const cvs=document.getElementById('dailyChart'); if(!
 document.getElementById('rangeSel')?.addEventListener('change', e=>{ chartRange=parseInt(e.target.value,10)||14; document.getElementById('rangeInfo').textContent=chartRange; drawDailyChart(); });
 
 /* ===== customize ===== */
-$('#fontSel').onchange  = e => applyAppearance(e.target.value);
+$('#fontSel').onchange = e => applyAppearance(e.target.value);
 
-$('#resetTheme').onclick=()=>{ 
-  $('#fontSel').value='sans';
-  [BGOVR_KEY,UIOVR_KEY,FGOVR_KEY,CARDOVR_KEY,CARDTRANS_KEY].forEach(k=>localStorage.removeItem(k));
-  $('#bgColor').value='#ffffff'; $('#uiColor').value='#111827'; $('#timerColor').value='#000000';
-  $('#cardColor').value='#ffffff'; $('#cardTrans').checked=true;
-  applyAppearance('sans'); 
-};
+/* リセットボタンは削除したため関連コードも削除 */
 
 $('#bgFile').onchange=e=>{ const f=e.target.files?.[0]; if(!f) return; const reader=new FileReader();
   reader.onload=()=>{ const dataUrl=reader.result; setWorkBg(dataUrl); save(BGKEY,dataUrl); applyModeBg(); };
