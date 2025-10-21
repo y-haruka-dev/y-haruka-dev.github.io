@@ -17,9 +17,9 @@
     --font:"Noto Sans JP",system-ui,-apple-system,"Segoe UI",Roboto,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif;
     --font-timer:"Noto Sans JP",system-ui,-apple-system,"Segoe UI",Roboto,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif;
 
-    /* タイマー数字と操作アイコンの色を分離 */
-    --fg-timer:#000000;   /* タイマーの数字 */
-    --icons:var(--ui-fg); /* 操作アイコン */
+    /* 分離：タイマーとUIの文字色 */
+    --fg-timer:#000000;   /* タイマーの数字色 */
+    --icons:var(--ui-fg); /* 操作アイコン色（既定はUI色と同じ） */
     --timer-box-h:clamp(220px,36vw,360px);
 
     --field-bg:#ffffff; --field-fg:var(--ui-fg);
@@ -34,7 +34,7 @@
   .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
   .muted{color:var(--muted)}
 
-  /* アプリバーはカード色に連動 */
+  /* アプリバーはカード色と連動 */
   .appbar{position:sticky;top:0;z-index:10;backdrop-filter:blur(8px);
     background:var(--card);border:1px solid var(--line);border-radius:16px;padding:10px 12px;margin-bottom:12px;
     display:flex;justify-content:space-between;align-items:center}
@@ -61,7 +61,7 @@
   .timer.is-break{opacity:.25;filter:grayscale(.35) saturate(.5)}
   .btn-row{display:flex;gap:14px;justify-content:center;margin-top:22px;margin-bottom:28px}
   .icon-btn{width:56px;height:56px;border-radius:14px;color:var(--icons)}
-  .primary.icon-btn{color:#081018} /* 開始ボタンのアイコンは常に見やすい黒 */
+  .primary.icon-btn{color:#081018}
   .icon{width:22px;height:22px}
 
   table{width:100%;border-collapse:collapse;margin-top:10px;font-size:15px}
@@ -157,13 +157,14 @@
       <div class="row" style="gap:12px;margin-top:10px">
         <label>背景色：<input type="color" id="bgColor" value="#ffffff" title="背景色（全体）"></label>
 
-        <label>タイマー色：<input type="color" id="timerColor" value="#000000" title="タイマーの数字色（任意）"></label>
-
-        <!-- アイコン色（自動ONが既定） -->
-        <label>アイコン色：<input type="color" id="iconColor" value="#111827" title="操作アイコン色（任意）"></label>
+        <!-- UI全体の文字色（タイマー除く） -->
+        <label>テキスト色（UI全体）：<input type="color" id="uiColor" value="#111827" title="画面全体の文字色（タイマー除く）"></label>
         <label style="display:inline-flex;align-items:center;gap:6px">
-          <input type="checkbox" id="iconAuto" checked> 自動（背景に合わせる）
+          <input type="checkbox" id="uiAuto" checked> 自動（背景に合わせる）
         </label>
+
+        <!-- タイマーの数字色（独立） -->
+        <label>タイマー色：<input type="color" id="timerColor" value="#000000" title="タイマーの数字色（任意）"></label>
 
         <label>カード背景色：<input type="color" id="cardColor" value="#ffffff" title="カード（ボックス/アプリバー共通）"></label>
         <label style="display:inline-flex;align-items:center;gap:6px">
@@ -211,78 +212,70 @@
 /* ===== helpers / keys ===== */
 const KEY='pomodoro.logs.v1', CATKEY='pomodoro.cats.v1';
 const FONTKEY='pomodoro.font.v1', COLORKEY='pomodoro.color.v1';
-const BGKEY='pomodoro.bg.v1';               // 作業中の背景
-const BGKEY_BREAK='pomodoro.bg.break.v1';   // 休憩中の背景
+const BGKEY='pomodoro.bg.v1';             // 作業中の背景
+const BGKEY_BREAK='pomodoro.bg.break.v1'; // 休憩中の背景
+
+/* 個別色 */
 const BGOVR_KEY='pomodoro.override.bg.v1';
-const FGOVR_KEY='pomodoro.override.fg.v1';        // タイマー数字の手動色
-const ICONOVR_KEY='pomodoro.override.icons.v1';   // アイコン手動色
-const ICONAUTO_KEY='pomodoro.icons.auto.v1';      // アイコン自動ON/OFF
+const UIOVR_KEY='pomodoro.override.ui.v1';      // UI全体の文字色
+const UIAUTO_KEY='pomodoro.ui.auto.v1';         // UI文字色の自動ON/OFF
+const FGOVR_KEY='pomodoro.override.fg.v1';      // タイマー数字の手動色
 const CARDOVR_KEY='pomodoro.override.card.v1';
 const CARDTRANS_KEY='pomodoro.override.cardtrans.v1';
+
 const $=s=>document.querySelector(s), $$=s=>document.querySelectorAll(s);
 const pad=n=>String(n).padStart(2,'0');
 function load(k){ try{ return JSON.parse(localStorage.getItem(k)) }catch{ return null } }
 function save(k,v){ localStorage.setItem(k, JSON.stringify(v)) }
 function escapeHtml(s){return (s||'').replace(/[&<>"']/g,m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[m]))}
 
-/* 文字色プリセット（タイマー用） */
+/* フォント・プリセット */
 const FONT_COLORS={ type1:'#000000', type2:'#F52838', type3:'#262724' };
 const FONTS={sans:'"Noto Sans JP",system-ui,-apple-system,"Segoe UI",Roboto,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif',
              serif:'"Noto Serif JP",serif'};
 
-/* 輝度判定でUI色を自動調整 */
+/* 輝度判定 */
 function hexToRgb(hex){ const m=(hex||'').trim().match(/^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i); return m?{r:parseInt(m[1],16),g:parseInt(m[2],16),b:parseInt(m[3],16)}:null; }
 function relLum({r,g,b}){ const f=v=>{v/=255;return v<=0.03928?v/12.92:Math.pow((v+0.055)/1.055,2.4)}; return 0.2126*f(r)+0.7152*f(g)+0.0722*f(b); }
-
-/* ===== Sound (better) ===== */
-let audioCtx=null;
-function ensureAudio(){
-  try{
-    if(!audioCtx) audioCtx=new (window.AudioContext||window.webkitAudioContext)();
-    if(audioCtx.state==='suspended') audioCtx.resume();
-  }catch{}
-}
-/** kind: 'break' = 作業→休憩, 'work' = 休憩→作業 */
-function chime(kind='break'){
-  try{
-    ensureAudio();
-    const ctx=audioCtx;
-    const g=ctx.createGain(); g.gain.value=0.08; g.connect(ctx.destination);
-    const freqs=(kind==='break')?[880,660]:[660,880]; // 下降/上昇で聞き分け
-    const now=ctx.currentTime;
-    freqs.forEach((f,i)=>{ const o=ctx.createOscillator(); o.type='sine'; o.frequency.value=f; o.connect(g); const t=now+i*0.18; o.start(t); o.stop(t+0.18); });
-  }catch{}
-}
 
 /* ===== appearance ===== */
 function applyAppearance(fontKey, colorKey){
   const r=document.documentElement.style;
 
-  // UIはSans固定、数字は切替
+  // UIはSans固定、タイマー数字は切替
   r.setProperty('--font', FONTS.sans);
   r.setProperty('--font-timer', fontKey==='serif' ? FONTS.serif : FONTS.sans);
 
-  // 背景（ピッカー or 既定）
+  // 背景
   const bg = load(BGOVR_KEY) || '#FFFFFF';
   r.setProperty('--bg', bg);
 
-  // UIの基準色（背景が暗ければ白）
-  const rgb = hexToRgb(bg); const dark = rgb && relLum(rgb)<0.5;
-  const ui = dark ? '#FFFFFF' : '#111827';
+  // UIの文字色：自動 or 手動
+  const uiAuto = load(UIAUTO_KEY);
+  const uiOv   = load(UIOVR_KEY);
+  let ui;
+  if (uiAuto===false && uiOv) {
+    ui = uiOv;
+  } else {
+    const rgb = hexToRgb(bg); const dark = rgb && relLum(rgb)<0.5;
+    ui = dark ? '#FFFFFF' : '#111827';
+  }
   r.setProperty('--ui-fg', ui);
-  if(dark){ r.setProperty('--field-bg','#0f1e26'); r.setProperty('--field-fg','#ffffff'); r.setProperty('--field-border','#355560'); r.setProperty('--field-focus','#68c6ff'); r.setProperty('--muted','#E6E6E6'); }
-  else   { r.setProperty('--field-bg','#ffffff'); r.setProperty('--field-fg','#111827'); r.setProperty('--field-border','#e5e7eb'); r.setProperty('--field-focus','#7dd3fc'); r.setProperty('--muted','#5a6473'); }
+  // mutedはUI色と背景の中間で生成
+  r.setProperty('--muted', `color-mix(in oklab, ${ui} 70%, ${bg} 30%)`);
 
-  // タイマー数字色（フォントカラー or 手動タイマー色）
-  const fgOverride = load(FGOVR_KEY);
-  const timerFg = fgOverride || FONT_COLORS[colorKey] || FONT_COLORS.type1;
+  // 入力欄の基調は背景の明度で調整
+  const rgb = hexToRgb(bg); const dark = rgb && relLum(rgb)<0.5;
+  if(dark){ r.setProperty('--field-bg','#0f1e26'); r.setProperty('--field-fg','#ffffff'); r.setProperty('--field-border','#355560'); r.setProperty('--field-focus','#68c6ff'); }
+  else   { r.setProperty('--field-bg','#ffffff'); r.setProperty('--field-fg','#111827'); r.setProperty('--field-border','#e5e7eb'); r.setProperty('--field-focus','#7dd3fc'); }
+
+  // タイマー数字色（プリセット or 手動）
+  const timerOv = load(FGOVR_KEY);
+  const timerFg = timerOv || FONT_COLORS[colorKey] || FONT_COLORS.type1;
   r.setProperty('--fg-timer', timerFg);
 
-  // アイコン色（自動ならUI色・手動なら指定色）
-  const iconAuto = load(ICONAUTO_KEY);
-  const iconOv   = load(ICONOVR_KEY);
-  const icons = (iconAuto===false && iconOv) ? iconOv : ui;
-  r.setProperty('--icons', icons);
+  // アイコンは既定でUI色と同じ（必要なら別途分離可）
+  r.setProperty('--icons', ui);
 
   // カード（透過ONなら半透明白20%、OFFならピッカー値）
   const trans = load(CARDTRANS_KEY); const transOn = (trans===null?true:!!trans);
@@ -335,13 +328,13 @@ function initUI(){
   const savedBreak=load(BGKEY_BREAK); if(savedBreak) setBreakBg(savedBreak);
 
   // 個別色UIへ反映
-  const bgOv=load(BGOVR_KEY), fgOv=load(FGOVR_KEY), icOv=load(ICONOVR_KEY),
-        icAuto=load(ICONAUTO_KEY), cardOv=load(CARDOVR_KEY), cardTr=load(CARDTRANS_KEY);
-  if(bgOv)   $('#bgColor').value=bgOv;
-  if(fgOv)   $('#timerColor').value=fgOv;
-  if(icOv)   $('#iconColor').value=icOv;
-  $('#iconAuto').checked = (icAuto===null ? true : !!icAuto);
-  if(cardOv) $('#cardColor').value=cardOv;
+  const bgOv=load(BGOVR_KEY), uiOv=load(UIOVR_KEY), uiAuto=load(UIAUTO_KEY),
+        timerOv=load(FGOVR_KEY), cardOv=load(CARDOVR_KEY), cardTr=load(CARDTRANS_KEY);
+  if(bgOv)     $('#bgColor').value=bgOv;
+  if(uiOv)     $('#uiColor').value=uiOv;
+  $('#uiAuto').checked = (uiAuto===null?true:!!uiAuto);
+  if(timerOv)  $('#timerColor').value=timerOv;
+  if(cardOv)   $('#cardColor').value=cardOv;
   $('#cardTrans').checked = (cardTr===null?true:!!cardTr);
 
   const wm=(+$('#workMin').value||25)*60*1000; updateDisplay(wm); updateStatus('停止中');
@@ -386,26 +379,7 @@ function stopAndLog(){ let workMs=elapsedWork; if(mode==='work') workMs+=Date.no
 function toBreak(){ const bm=(+$('#breakMin').value||5)*60*1000; remain=bm; startAt=Date.now(); mode='break'; setTimerAppearance(); applyModeBg(); updateStatus('休憩中'); $('#pauseBtn').disabled=true; $('#resumeBtn').disabled=true; $('#skipBreak').disabled=false; tick(); }
 function toWork(){ const wm=(+$('#workMin').value||25)*60*1000; remain=wm; startAt=Date.now(); mode='work'; setTimerAppearance(); applyModeBg(); updateStatus('作業中'); $('#pauseBtn').disabled=false; $('#resumeBtn').disabled=true; $('#skipBreak').disabled=true; tick(); }
 function resetAll(){ clearInterval(ticker); ticker=null; mode='idle'; remain=0; elapsedWork=0; setTimerAppearance(); applyModeBg(); $('#pauseBtn').disabled=true; $('#resumeBtn').disabled=true; $('#stopBtn').disabled=true; $('#skipBreak').disabled=true; $('#startBtn').disabled=false; const wm=(+$('#workMin').value||25)*60*1000; updateDisplay(wm); updateStatus('停止中'); }
-
-/* 切替＋チャイム */
-function tick(){
-  clearInterval(ticker);
-  ticker=setInterval(()=>{
-    const left=Math.max(0, remain-(Date.now()-startAt));
-    updateDisplay(left);
-    if(left<=0){
-      clearInterval(ticker); ticker=null;
-      if(mode==='work'){                 // 作業 → 休憩
-        elapsedWork+=remain;
-        chime('break');
-        toBreak();
-      }else if(mode==='break'){          // 休憩 → 作業（不要なら chime を消してOK）
-        chime('work');
-        toWork();
-      }
-    }
-  },250);
-}
+function tick(){ clearInterval(ticker); ticker=setInterval(()=>{ const left=Math.max(0,remain-(Date.now()-startAt)); updateDisplay(left); if(left<=0){ clearInterval(ticker); ticker=null; if(mode==='work'){ elapsedWork+=remain; toBreak(); beep(); } else if(mode==='break'){ toWork(); beep(); } } },250); }
 
 /* ===== categories ===== */
 $('#addCat').onclick=()=>{ const v=$('#newCat').value.trim(); if(!v) return; if(!categories.includes(v)){ categories.push(v); save(CATKEY,categories); renderCategoryOptions(v);} else { $('#category').value=v; } $('#newCat').value=''; };
@@ -427,8 +401,8 @@ $('#colorSel').onchange = e => { localStorage.removeItem(FGOVR_KEY); applyAppear
 
 $('#resetTheme').onclick=()=>{ 
   $('#fontSel').value='sans'; $('#colorSel').value='type1';
-  [BGOVR_KEY,FGOVR_KEY,ICONOVR_KEY,ICONAUTO_KEY,CARDOVR_KEY,CARDTRANS_KEY].forEach(k=>localStorage.removeItem(k));
-  $('#bgColor').value='#ffffff'; $('#timerColor').value='#000000'; $('#iconColor').value='#111827'; $('#iconAuto').checked=true;
+  [BGOVR_KEY,UIOVR_KEY,UIAUTO_KEY,FGOVR_KEY,CARDOVR_KEY,CARDTRANS_KEY].forEach(k=>localStorage.removeItem(k));
+  $('#bgColor').value='#ffffff'; $('#uiColor').value='#111827'; $('#uiAuto').checked=true; $('#timerColor').value='#000000';
   $('#cardColor').value='#ffffff'; $('#cardTrans').checked=true;
   applyAppearance('sans','type1'); 
 };
@@ -445,26 +419,32 @@ $('#bgBreakFile').onchange=e=>{ const f=e.target.files?.[0]; if(!f) return; cons
 };
 $('#clearBgBreak').onclick=()=>{ setBreakBg(null); localStorage.removeItem(BGKEY_BREAK); applyModeBg(); };
 
+/* 適用・クリア */
 $('#applyColors').onclick=()=>{ 
-  save(BGOVR_KEY,   $('#bgColor').value);
-  save(FGOVR_KEY,   $('#timerColor').value);      // タイマー数字色（手動）
-  save(ICONOVR_KEY, $('#iconColor').value);       // アイコン色（手動）
-  save(ICONAUTO_KEY,$('#iconAuto').checked);      // 自動ON/OFF
+  save(BGOVR_KEY, $('#bgColor').value);
+  save(UIOVR_KEY, $('#uiColor').value);
+  save(UIAUTO_KEY,$('#uiAuto').checked);
+  save(FGOVR_KEY, $('#timerColor').value);
   save(CARDOVR_KEY, $('#cardColor').value);
   save(CARDTRANS_KEY,$('#cardTrans').checked);
   applyAppearance($('#fontSel').value,$('#colorSel').value); 
 };
 $('#clearColors').onclick=()=>{ 
-  [BGOVR_KEY,FGOVR_KEY,ICONOVR_KEY,ICONAUTO_KEY,CARDOVR_KEY,CARDTRANS_KEY].forEach(k=>localStorage.removeItem(k));
-  $('#iconAuto').checked=true;
+  [BGOVR_KEY,UIOVR_KEY,UIAUTO_KEY,FGOVR_KEY,CARDOVR_KEY,CARDTRANS_KEY].forEach(k=>localStorage.removeItem(k));
+  $('#uiAuto').checked=true; $('#cardTrans').checked=true;
   applyAppearance($('#fontSel').value,$('#colorSel').value); 
 };
 
+/* ===== beep ===== */
+function beep(){ try{ const a=new (window.AudioContext||window.webkitAudioContext)(); const o=a.createOscillator(), g=a.createGain(); o.connect(g); g.connect(a.destination); o.type='sine'; o.frequency.value=880; g.gain.setValueAtTime(0.05,a.currentTime); o.start(); setTimeout(()=>{ o.stop(); a.close(); },250);}catch{} }
+
 /* ===== binds ===== */
-$('#startBtn').onclick=()=>{ ensureAudio(); startTimer(); };  // ← 最初のタップでAudioContextを解放
-$('#pauseBtn').onclick=pauseTimer; $('#resumeBtn').onclick=resumeTimer;
+$('#startBtn').onclick=startTimer; $('#pauseBtn').onclick=pauseTimer; $('#resumeBtn').onclick=resumeTimer;
 $('#stopBtn').onclick=stopAndLog; $('#skipBreak').onclick=()=>{ if(mode==='break') toWork(); };
 $('#workMin').oninput=()=>{ if(mode==='idle'){ updateDisplay((+$('#workMin').value||25)*60*1000); } };
+
+/* ===== logs clear ===== */
+$('#clearBtn')?.addEventListener('click', ()=>{ if(confirm('履歴をすべて削除しますか？')){ logs=[]; save(KEY,logs); renderLogs(); drawDailyChart(); } });
 
 /* ===== init ===== */
 initUI();
