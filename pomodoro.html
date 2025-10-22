@@ -25,7 +25,7 @@
     --field-bg:#ffffff; --field-fg:#111827;
     --field-border:#e5e7eb; --field-focus:#7dd3fc;
 
-    /* モバイルのボトムナビをやや高めに */
+    /* モバイルのボトムナビをやや高めに（被りに強い） */
     --bottom-nav-h:80px;
   }
 
@@ -79,21 +79,21 @@
   /* ===== ボトムタブ（モバイルだけ表示） ===== */
   .bottom-tabs{display:none}
   @media (max-width:480px){
-    html{font-size:14.5px} /* 文字を少し小さく */
+    html{font-size:14.5px}       /* 文字を少し小さく */
     .wrap{
       padding:12px;
-      /* ボトムナビ高さ + セーフエリア + さらに余白（かぶり防止） */
+      /* ボトムナビ高さ + セーフエリア + さらに24px追加（被り防止） */
       padding-bottom:calc(12px + var(--bottom-nav-h) + env(safe-area-inset-bottom) + 24px);
     }
     .appbar{padding:8px 10px}
-    .tabs{display:none} /* 上のタブを隠す */
+    .tabs{display:none} /* 上のタブは隠す */
 
     /* 基本設定：縦積み */
     [role="group"][aria-label="基本設定"] > label{flex:1 1 100%;min-width:0}
     #newCat{flex:1 1 100%}
     input[type=number]{width:100%}
 
-    /* タイマー：正方形に（両端トリミングOK） */
+    /* タイマー：正方形表示（両端トリミングOK） */
     .timer-box{
       width:min(92vw,520px);
       height:auto;
@@ -101,25 +101,27 @@
       margin:16px 0 24px;
     }
     .timer-bg{background-size:cover;background-position:center}
-    .timer{font-size:clamp(48px,17vw,120px)}
+    .timer{font-size:clamp(50px,17vw,120px)}
     .timer-wrap{padding:36px 8px 12px}
 
     .icon-btn{width:48px;height:48px;border-radius:12px}
     .icon{width:20px;height:20px}
     .btn-row{gap:10px;margin-top:14px;margin-bottom:18px}
+
     table{font-size:14px} th,td{padding:.5rem .35rem}
 
-    /* ★下部固定ナビ：常時表示を強制 */
+    /* ★下部固定ナビ（常時表示・絶対消えない） */
     .bottom-tabs{
       position:fixed;left:0;right:0;bottom:0;
+      z-index:10000;                       /* 強め */
       height:var(--bottom-nav-h);
       padding:10px max(10px,env(safe-area-inset-left))
                calc(10px + env(safe-area-inset-bottom) + 18px)
                max(10px,env(safe-area-inset-right));
-      display:flex !important;                 /* ← 何があっても表示 */
-      z-index:10000;                           /* ← 前面に */
+      display:flex !important;             /* 何があっても表示 */
       justify-content:space-around;align-items:center;
-      background:var(--card);border-top:1px solid var(--line);backdrop-filter:blur(8px)
+      background:var(--card);border-top:1px solid var(--line);backdrop-filter:blur(8px);
+      pointer-events:auto;
     }
     .bt{width:54px;height:54px;border-radius:12px;border:1px solid transparent;background:transparent;color:var(--icons);
         display:flex;align-items:center;justify-content:center}
@@ -147,7 +149,7 @@
       <span class="muted" id="status">停止中</span>
     </header>
 
-    <!-- ===== Timer ===== -->
+    <!-- Timer -->
     <section id="view-timer" data-view="timer" class="card">
       <div class="row" role="group" aria-label="基本設定">
         <label>カテゴリ：<select id="category" aria-label="カテゴリ"></select></label>
@@ -178,7 +180,7 @@
       <p class="muted small-note" style="margin:6px 0 0">※「停止して記録」は作業時間のみを履歴に保存します（休憩は記録しません）。</p>
     </section>
 
-    <!-- ===== Logs & Stats ===== -->
+    <!-- Logs & Stats -->
     <section class="grid grid-2" style="margin-top:12px">
       <div id="view-logs" data-view="logs" class="card" hidden>
         <div class="row" style="justify-content:space-between">
@@ -209,7 +211,7 @@
       </div>
     </section>
 
-    <!-- ===== Customize ===== -->
+    <!-- Customize -->
     <section id="view-custom" data-view="custom" class="card" hidden>
       <div class="row" style="align-items:flex-end">
         <label>フォント：
@@ -241,7 +243,7 @@
         <span class="muted">※ 端末内に保存（localStorage）。</span>
       </div>
 
-      <!-- プレビュー（作業／休憩） -->
+      <!-- ★ プレビュー（作業／休憩） -->
       <div class="card" style="margin-top:12px">
         <strong>プレビュー</strong>
         <div class="timer-box" style="margin-top:10px">
@@ -255,7 +257,7 @@
       </div>
     </section>
 
-    <!-- ===== Clock ===== -->
+    <!-- Clock -->
     <section id="view-clock" data-view="clock" class="card" hidden>
       <div class="timer-wrap">
         <div class="timer-box">
@@ -267,7 +269,7 @@
     </section>
   </div>
 
-  <!-- ★ モバイル：下部固定タブ（歯車アイコンに変更済） -->
+  <!-- ★ ボトムタブ：歯車アイコン＆常時表示 -->
   <nav class="bottom-tabs" aria-label="ボトムナビ">
     <button class="bt" data-tab="clock" aria-label="時計">
       <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.7"/><path d="M12 7v5l3 2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -285,8 +287,8 @@
       <svg viewBox="0 0 24 24" fill="none"><rect x="5" y="12" width="3" height="7" rx="1" fill="currentColor"/><rect x="10.5" y="9" width="3" height="10" rx="1" fill="currentColor"/><rect x="16" y="6" width="3" height="13" rx="1" fill="currentColor"/></svg>
       <span class="sr-only">日別集計</span>
     </button>
+    <!-- 歯車（カスタマイズ） -->
     <button class="bt" data-tab="custom" aria-label="カスタマイズ">
-      <!-- 歯車アイコン -->
       <svg viewBox="0 0 24 24" fill="none">
         <path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z" stroke="currentColor" stroke-width="1.7"/>
         <path d="M19.4 12c0-.3.02-.6.06-.9l1.66-1.28-1.2-2.08-2.02.5a7.3 7.3 0 0 0-1.56-.9l-.31-2.06h-2.4l-.31 2.06c-.55.2-1.08.49-1.56.9l-2.02-.5-1.2 2.08 1.66 1.28c-.04.3-.06.6-.06.9s.02.6.06.9L5.3 14.18l1.2 2.08 2.02-.5c.48.4 1.01.69 1.56.9l.31 2.06h2.4l.31-2.06c.55-.21 1.08-.5 1.56-.9l2.02.5 1.2-2.08-1.66-1.28c.04-.3.06-.6.06-.9Z" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
@@ -296,7 +298,7 @@
   </nav>
 
 <script>
-/* ===== Keys / helpers ===== */
+/* ===== keys / helpers ===== */
 const KEY='pomodoro.logs.v1', CATKEY='pomodoro.cats.v1';
 const FONTKEY='pomodoro.font.v1';
 const BGKEY='pomodoro.bg.v1';
@@ -310,25 +312,28 @@ const $=s=>document.querySelector(s), $$=s=>document.querySelectorAll(s);
 const pad=n=>String(n).padStart(2,'0');
 function load(k){ try{ return JSON.parse(localStorage.getItem(k)) }catch{ return null } }
 function save(k,v){ localStorage.setItem(k, JSON.stringify(v)) }
-function escapeHtml(s){return (s||'').replace(/[&<>"']/g,m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;' }[m]))}
+function escapeHtml(s){return (s||'').replace(/[&<>"']/g,m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[m]))}
 const FONTS={sans:'"Noto Sans JP",system-ui,-apple-system,"Segoe UI",Roboto,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif',serif:'"Noto Serif JP",serif'};
 function hexToRgb(hex){ const m=(hex||'').trim().match(/^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i); return m?{r:parseInt(m[1],16),g:parseInt(m[2],16),b:parseInt(m[3],16)}:null; }
 function relLum({r,g,b}){ const f=v=>{v/=255;return v<=0.03928?v/12.92:Math.pow((v+0.055)/1.055,2.4)}; return 0.2126*f(r)+0.7152*f(g)+0.0722*f(b); }
 
-/* ===== Appearance ===== */
+/* ===== appearance ===== */
 function applyAppearance(fontKey){
   const r=document.documentElement.style;
-  r.setProperty('--font', FONTS.sans);
-  r.setProperty('--font-timer', fontKey==='serif' ? FONTS.serif : FONTS.sans);
+  r.setProperty('--font', FONTS.sans);                        // UIはSans固定
+  r.setProperty('--font-timer', fontKey==='serif' ? FONTS.serif : FONTS.sans); // タイマー/時計は切替
 
+  // 背景＆UI色
   const bg = load(BGOVR_KEY) || '#FFFFFF'; r.setProperty('--bg', bg);
   const ui = load(UIOVR_KEY) || ((hexToRgb(bg) && relLum(hexToRgb(bg))<0.5) ? '#FFFFFF' : '#111827');
   r.setProperty('--ui-fg', ui);
   r.setProperty('--muted', `color-mix(in oklab, ${ui} 70%, ${bg} 30%)`);
 
+  // カード色：指定がある＆透過OFFならその色、なければデフォ透過
   const trans = load(CARDTRANS_KEY); const cardTransOn = (trans===null?true:!!trans); const cardOv = load(CARDOVR_KEY);
   r.setProperty('--card', cardTransOn ? 'rgba(255,255,255,.20)' : (cardOv || '#FFFFFF'));
 
+  // 入力UIやアイコンの見やすさは「カード基準」で決定
   const basis = (!cardTransOn && cardOv) ? cardOv : bg;
   const dark = (hexToRgb(basis) && relLum(hexToRgb(basis))<0.5);
   if(dark){
@@ -339,6 +344,7 @@ function applyAppearance(fontKey){
     r.setProperty('--field-border','#e5e7eb'); r.setProperty('--field-focus','#7dd3fc'); r.setProperty('--icons', ui);
   }
 
+  // タイマー色
   const timerFg = load(FGOVR_KEY) || '#000000'; r.setProperty('--fg-timer', timerFg);
   const pv = document.querySelector('#timerBgPreview')?.nextElementSibling; if(pv) pv.style.color = timerFg;
 
@@ -362,21 +368,21 @@ function applyModeBg(){
   const el=document.getElementById('timerBg');
   if(!el) return;
   if(mode==='break'){
-    el.style.opacity = .6; /* 休憩＝40% */
+    el.style.opacity = .6; /* 休憩=40% */
     el.style.backgroundImage = breakBgUrl?`url('${breakBgUrl}')`:(workBgUrl?`url('${workBgUrl}')`:'none');
   }else{
-    el.style.opacity = .7; /* 作業＝30% */
+    el.style.opacity = .7; /* 作業=30% */
     el.style.backgroundImage = workBgUrl?`url('${workBgUrl}')`:'none';
   }
 }
 
-/* ===== State ===== */
+/* ===== state ===== */
 let logs=load(KEY)||[];
 let categories=load(CATKEY)||['学習','開発','家事','その他']; save(CATKEY,categories);
 
 let mode='idle', startAt=0, elapsedWork=0, remain=0, ticker=null;
 
-/* ===== Init ===== */
+/* ===== init ===== */
 function renderCategoryOptions(selected){
   $('#category').innerHTML=categories.map(c=>`<option ${selected===c?'selected':''}>${escapeHtml(c)}</option>`).join('');
 }
@@ -390,4 +396,221 @@ function initUI(){
   const savedBreak=load(BGKEY_BREAK); if(savedBreak) setBreakBg(savedBreak);
 
   const bgOv=load(BGOVR_KEY), uiOv=load(UIOVR_KEY),
-        timerOv=load(FGOVR_KEY), cardOv=load(CARDOVR_KEY), cardTr=load(C
+        timerOv=load(FGOVR_KEY), cardOv=load(CARDOVR_KEY), cardTr=load(CARDTRANS_KEY);
+  if(bgOv)     $('#bgColor').value=bgOv;
+  if(uiOv)     $('#uiColor').value=uiOv;
+  if(timerOv)  $('#timerColor').value=timerOv;
+  if(cardOv)   $('#cardColor').value=cardOv;
+  $('#cardTrans').checked = (cardTr===null?true:!!cardTr);
+
+  const wm=(+$('#workMin').value||25)*60*1000; updateDisplay(wm); updateStatus('停止中');
+  setTimerAppearance(); applyModeBg(); renderLogs(); drawDailyChart(); setupTabs();
+
+  const pv1=document.getElementById('timerBgPreview'); if(pv1) pv1.style.opacity=.7;
+  const pv2=document.getElementById('timerBgBreakPreview'); if(pv2) pv2.style.opacity=.6;
+}
+function updateDisplay(ms){ const m=Math.floor(ms/60000), s=Math.floor((ms%60000)/1000); $('#display').textContent=`${pad(m)}:${pad(s)}` }
+function updateStatus(t){ $('#status').textContent=t }
+
+/* ===== タブ（上部/下部 同期 & モバイルで常時表示） ===== */
+let clockTimer=null;
+function setupTabs(){
+  const bottom = document.querySelector('.bottom-tabs');
+  const ensureBottom = ()=>{
+    const onMobile = window.matchMedia('(max-width:480px)').matches;
+    bottom.style.display = onMobile ? 'flex' : 'none';
+  };
+
+  const show=(name)=>{
+    $$('[data-view]').forEach(v=>v.hidden=(v.dataset.view!==name));
+    [...$$('.tabs a'), ...$$('.bottom-tabs .bt')].forEach(el=>el.classList.toggle('active', el.dataset.tab===name));
+    history.replaceState(null,'','#'+name);
+    if(name==='clock') startClock(); else stopClock();
+    ensureBottom();                       // どの画面でも表示を強制
+  };
+
+  ensureBottom();
+  const hash=(location.hash||'#timer').replace('#','');
+  show(['timer','logs','stats','custom','clock'].includes(hash)?hash:'timer');
+
+  $$('.tabs a').forEach(a=>a.onclick=(e)=>{e.preventDefault();show(a.dataset.tab);});
+  $$('.bottom-tabs .bt').forEach(b=>b.onclick=()=>show(b.dataset.tab));
+  window.addEventListener('resize', ensureBottom);
+}
+
+/* ===== clock ===== */
+const two=n=>String(n).padStart(2,'0');
+function renderClock(){
+  const now=new Date();
+  $('#clockDisplay').textContent=`${two(now.getHours())}:${two(now.getMinutes())}:${two(now.getSeconds())}`;
+  const y=now.getFullYear(), mo=two(now.getMonth()+1), d=two(now.getDate());
+  const wd=["日","月","火","水","木","金","土"][now.getDay()];
+  $('#clockDate').textContent=`${y} ${mo}/${d} (${wd})`;
+}
+function startClock(){ if(clockTimer) return; applyModeBg(); renderClock(); clockTimer=setInterval(renderClock,1000); }
+function stopClock(){ if(clockTimer){ clearInterval(clockTimer); clockTimer=null; } }
+
+/* ===== timer ===== */
+function setTimerAppearance(){ $('#display').classList.toggle('is-break',mode==='break'); }
+function enableRunning(on){
+  $('#startBtn').disabled=on; $('#pauseBtn').disabled=!on; $('#stopBtn').disabled=!on;
+  $('#resumeBtn').disabled=true; $('#skipBreak').disabled=true;
+}
+function startTimer(){
+  if(mode!=='idle') return;
+  const wm=(+$('#workMin').value||25)*60*1000;
+  remain=wm; elapsedWork=0; startAt=Date.now(); mode='work';
+  setTimerAppearance(); applyModeBg(); enableRunning(true); updateStatus('作業中'); tick();
+}
+function pauseTimer(){
+  if(mode!=='work') return;
+  mode='paused'; elapsedWork+=Date.now()-startAt;
+  clearInterval(ticker); $('#pauseBtn').disabled=true; $('#resumeBtn').disabled=false; updateStatus('一時停止');
+}
+function resumeTimer(){
+  if(mode!=='paused') return;
+  mode='work'; startAt=Date.now();
+  $('#pauseBtn').disabled=false; $('#resumeBtn').disabled=true; updateStatus('作業中'); tick();
+}
+function stopAndLog(){
+  let workMs=elapsedWork; if(mode==='work') workMs+=Date.now()-startAt;
+  if(workMs>=1000){ logs.unshift({at:Date.now(),category:$('#category').value,ms:workMs}); save(KEY,logs); }
+  resetAll(); renderLogs(); drawDailyChart();
+}
+function toBreak(){
+  const bm=(+$('#breakMin').value||5)*60*1000;
+  remain=bm; startAt=Date.now(); mode='break';
+  setTimerAppearance(); applyModeBg(); updateStatus('休憩中');
+  $('#pauseBtn').disabled=true; $('#resumeBtn').disabled=true; $('#skipBreak').disabled=false;
+  tick();
+}
+function toWork(){
+  const wm=(+$('#workMin').value||25)*60*1000;
+  remain=wm; startAt=Date.now(); mode='work';
+  setTimerAppearance(); applyModeBg(); updateStatus('作業中');
+  $('#pauseBtn').disabled=false; $('#resumeBtn').disabled=true; $('#skipBreak').disabled=true;
+  tick();
+}
+function resetAll(){
+  clearInterval(ticker); ticker=null; mode='idle'; remain=0; elapsedWork=0;
+  setTimerAppearance(); applyModeBg();
+  $('#pauseBtn').disabled=true; $('#resumeBtn').disabled=true; $('#stopBtn').disabled=true; $('#skipBreak').disabled=true; $('#startBtn').disabled=false;
+  const wm=(+$('#workMin').value||25)*60*1000; updateDisplay(wm); updateStatus('停止中');
+}
+function tick(){
+  clearInterval(ticker);
+  ticker=setInterval(()=>{
+    const left=Math.max(0, remain-(Date.now()-startAt));
+    updateDisplay(left);
+    if(left<=0){
+      clearInterval(ticker); ticker=null;
+      if(mode==='work'){ elapsedWork+=remain; toBreak(); beep(); }
+      else if(mode==='break'){ toWork(); beep(); }
+    }
+  },250);
+}
+
+/* ===== categories ===== */
+$('#addCat').onclick=()=>{ const v=$('#newCat').value.trim(); if(!v) return;
+  if(!categories.includes(v)){ categories.push(v); save(CATKEY,categories); renderCategoryOptions(v);}
+  else { $('#category').value=v; }
+  $('#newCat').value='';
+};
+$('#delCat').onclick=()=>{ const sel=$('#category').value; if(!sel) return;
+  if(categories.length<=1){ alert('カテゴリは最低1つ必要です。'); return; }
+  if(!confirm(`「${sel}」を削除しますか？`)) return;
+  categories=categories.filter(c=>c!==sel); save(CATKEY,categories); renderCategoryOptions(categories[0]);
+};
+
+/* ===== logs & chart ===== */
+function fmtMin(ms){ return `${Math.round(ms/60000)}分`; }
+function renderLogs(){
+  const tb=$('#logTable tbody'); tb.innerHTML=''; let byCat={};
+  for(const x of logs){
+    byCat[x.category]=(byCat[x.category]||0)+x.ms;
+    const tr=document.createElement('tr'); const d=new Date(x.at);
+    tr.innerHTML=`<td>${d.toLocaleString()}</td><td>${escapeHtml(x.category)}</td><td class="right">${fmtMin(x.ms)}</td>`;
+    tb.appendChild(tr);
+  }
+  const pairs=Object.entries(byCat).map(([k,v])=>`${k}:${fmtMin(v)}`).join(' ／ ');
+  $('#totals').textContent=pairs?`カテゴリ別合計 → ${pairs}`:'まだ記録はありません';
+}
+$('#exportBtn').onclick=()=>{ const head='datetime,category,minutes\n'; const rows=logs.map(x=>`${new Date(x.at).toISOString()},${String(x.category).replaceAll(',',' ')},${Math.round(x.ms/60000)}`).join('\n'); const blob=new Blob([head+rows],{type:'text/csv'}); const a=Object.assign(document.createElement('a'),{href:URL.createObjectURL(blob),download:'pomodoro_logs.csv'}); a.click(); URL.revokeObjectURL(a.href); };
+
+let chartRange=14; const dpr=window.devicePixelRatio||1;
+function drawDailyChart(){
+  const cvs=document.getElementById('dailyChart'); if(!cvs) return;
+  const ctx=cvs.getContext('2d');
+  const cssW=cvs.clientWidth||600, cssH=parseInt(cvs.getAttribute('height'))||220;
+  cvs.width=Math.round(cssW*dpr); cvs.height=Math.round(cssH*dpr); ctx.setTransform(dpr,0,0,dpr,0,0);
+
+  const today=new Date(); today.setHours(0,0,0,0);
+  const labels=[]; for(let i=chartRange-1;i>=0;i--){ const d=new Date(today); d.setDate(today.getDate()-i); labels.push(`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`); }
+  const perDay=Object.fromEntries(labels.map(k=>[k,0]));
+  for(const x of logs){ const d=new Date(x.at); const k=`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; if(k in perDay) perDay[k]+=Math.round(x.ms/60000); }
+  const values=labels.map(k=>perDay[k]); const maxV=Math.max(60,...values);
+
+  const P={l:40,r:12,t:16,b:26}, W=cssW-P.l-P.r, H=cssH-P.t-P.b;
+  ctx.clearRect(0,0,cssW,cssH);
+  ctx.strokeStyle='rgba(120,130,150,.28)'; ctx.lineWidth=1;
+  ctx.font='12px system-ui,-apple-system,Segoe UI,Roboto,sans-serif';
+  ctx.fillStyle=getComputedStyle(document.body).getPropertyValue('--muted')||'#6b7280';
+  for(let i=0;i<=5;i++){ const y=P.t+H*(i/5); const v=Math.round(maxV*(1-i/5)); ctx.beginPath(); ctx.moveTo(P.l,y); ctx.lineTo(P.l+W,y); ctx.stroke(); ctx.fillText(String(v),8,y+4); }
+
+  const gap=4, barW=Math.max(4,(W-gap*(labels.length-1))/labels.length);
+  const brand=getComputedStyle(document.body).getPropertyValue('--brand')||'#5cc9ee';
+  const brand2=getComputedStyle(document.body).getPropertyValue('--brand2')||'#9aa7ff';
+
+  for(let i=0;i<labels.length;i++){
+    const x=P.l+i*(barW+gap); const h=(values[i]/maxV)*H; const y=P.t+(H-h);
+    const grad=ctx.createLinearGradient(0,y,0,y+h); grad.addColorStop(0,brand.trim()); grad.addColorStop(1,brand2.trim());
+    ctx.fillStyle=grad; ctx.fillRect(x,y,barW,h);
+    if(labels.length<=14 ? i%2===0 : i%5===0){ const lab=labels[i].slice(5); ctx.fillStyle=getComputedStyle(document.body).getPropertyValue('--muted')||'#6b7280'; ctx.fillText(lab,x,P.t+H+14); }
+  }
+  const sum=values.reduce((a,b)=>a+b,0); ctx.fillStyle=getComputedStyle(document.body).getPropertyValue('--muted')||'#6b7280'; ctx.fillText(`計 ${sum} 分`, cssW-80, P.t+12);
+}
+document.getElementById('rangeSel')?.addEventListener('change', e=>{ chartRange=parseInt(e.target.value,10)||14; document.getElementById('rangeInfo').textContent=chartRange; drawDailyChart(); });
+
+/* ===== カスタマイズ ===== */
+$('#fontSel').onchange = e => applyAppearance(e.target.value);
+
+$('#bgFile').onchange=e=>{ const f=e.target.files?.[0]; if(!f) return;
+  const reader=new FileReader();
+  reader.onload=()=>{ const dataUrl=reader.result; setWorkBg(dataUrl); save(BGKEY,dataUrl); applyModeBg(); };
+  reader.readAsDataURL(f);
+};
+$('#clearBg').onclick=()=>{ setWorkBg(null); localStorage.removeItem(BGKEY); applyModeBg(); };
+
+$('#bgBreakFile').onchange=e=>{ const f=e.target.files?.[0]; if(!f) return;
+  const reader=new FileReader();
+  reader.onload=()=>{ const dataUrl=reader.result; setBreakBg(dataUrl); save(BGKEY_BREAK,dataUrl); applyModeBg(); };
+  reader.readAsDataURL(f);
+};
+$('#clearBgBreak').onclick=()=>{ setBreakBg(null); localStorage.removeItem(BGKEY_BREAK); applyModeBg(); };
+
+$('#applyColors').onclick=()=>{ 
+  save(BGOVR_KEY, $('#bgColor').value);
+  save(UIOVR_KEY, $('#uiColor').value);
+  save(FGOVR_KEY, $('#timerColor').value);
+  save(CARDOVR_KEY, $('#cardColor').value);
+  save(CARDTRANS_KEY, $('#cardTrans').checked);
+  applyAppearance($('#fontSel').value); 
+};
+$('#clearColors').onclick=()=>{ 
+  [BGOVR_KEY,UIOVR_KEY,FGOVR_KEY,CARDOVR_KEY,CARDTRANS_KEY].forEach(k=>localStorage.removeItem(k));
+  $('#cardTrans').checked=true;
+  applyAppearance($('#fontSel').value); 
+};
+
+/* ===== beep & binds ===== */
+function beep(){ try{ const a=new (window.AudioContext||window.webkitAudioContext)(); const o=a.createOscillator(), g=a.createGain(); o.connect(g); g.connect(a.destination); o.type='sine'; o.frequency.value=880; g.gain.setValueAtTime(0.05,a.currentTime); o.start(); setTimeout(()=>{ o.stop(); a.close(); },250);}catch{} }
+
+$('#startBtn').onclick=startTimer; $('#pauseBtn').onclick=pauseTimer; $('#resumeBtn').onclick=resumeTimer;
+$('#stopBtn').onclick=stopAndLog; $('#skipBreak').onclick=()=>{ if(mode==='break') toWork(); };
+$('#workMin').oninput=()=>{ if(mode==='idle'){ updateDisplay((+$('#workMin').value||25)*60*1000); } };
+
+/* ===== init ===== */
+initUI();
+</script>
+</body>
+</html>
