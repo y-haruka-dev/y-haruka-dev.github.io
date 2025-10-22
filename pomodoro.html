@@ -8,22 +8,20 @@
 <style>
   :root{
     --bg:#ffffff; --ui-fg:#111827; --muted:#5a6473;
-    --card:rgba(255,255,255,.20); /* 既定：透過白20%（アプリバーも連動） */
+    --card:rgba(255,255,255,.20); /* 既定：半透明カード（アプリバーも同じ） */
     --line:#e6eaf1;
     --brand:#5cc9ee; --brand2:#9aa7ff;
-    --radius:12px; --shadow:0 8px 18px rgba(20,30,60,.06);
+    --radius:12px;
     --wrap:1000px; --btnh:44px;
 
     --font:"Noto Sans JP",system-ui,-apple-system,"Segoe UI",Roboto,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif;
     --font-timer:"Noto Sans JP",system-ui,-apple-system,"Segoe UI",Roboto,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif;
 
-    /* 文字色は分離管理 */
-    --fg-timer:#000000;   /* タイマーの数字 */
-    --icons:var(--ui-fg); /* 操作アイコン（コントロール配色に追従） */
+    --fg-timer:#000000;
+    --icons:var(--ui-fg);
 
     --timer-box-h:clamp(220px,36vw,360px);
 
-    /* 入力欄の基調色（カード色に基づき切替） */
     --field-bg:#ffffff; --field-fg:#111827;
     --field-border:#e5e7eb; --field-focus:#7dd3fc;
   }
@@ -32,11 +30,17 @@
   html{font-size:17px}
   body{margin:0;background:var(--bg);color:var(--ui-fg);font-family:var(--font);line-height:1.7}
   .wrap{max-width:var(--wrap);margin:auto;padding:16px}
-  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow)}
+  .card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:16px;
+    box-shadow:none; /* ← 影をなくす */
+  }
   .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
   .muted{color:var(--muted)}
+  .small-note{font-size:12px;font-weight:400} /* ← 注釈の体裁 */
 
-  /* アプリバー（カード色と連動） */
   .appbar{position:sticky;top:0;z-index:10;backdrop-filter:blur(8px);
     background:var(--card);border:1px solid var(--line);border-radius:16px;padding:10px 12px;margin-bottom:12px;
     display:flex;justify-content:space-between;align-items:center}
@@ -55,7 +59,7 @@
 
   .timer-wrap{display:flex;flex-direction:column;align-items:center;padding:56px 8px 18px}
   .timer-box{position:relative;width:min(92vw,780px);height:var(--timer-box-h);display:flex;align-items:center;justify-content:center;border-radius:18px;overflow:hidden;margin:20px 0 32px}
-  .timer-bg{position:absolute;inset:0;background-size:cover;background-position:center;opacity:.7;pointer-events:none;filter:saturate(.9) blur(.3px)} /* 作業=透過30% */
+  .timer-bg{position:absolute;inset:0;background-size:cover;background-position:center;opacity:.7;pointer-events:none;filter:saturate(.9) blur(.3px)}
   .timer{position:relative;font-weight:800;font-size:clamp(72px,14vw,140px);letter-spacing:.04em;text-align:center;margin:0;color:var(--fg-timer);font-family:var(--font-timer)}
   .timer.is-break{opacity:.25;filter:grayscale(.35) saturate(.5)}
   .btn-row{display:flex;gap:14px;justify-content:center;margin-top:22px;margin-bottom:28px}
@@ -112,7 +116,8 @@
           <button class="btn icon-btn" id="skipBreak" title="休憩をスキップ" aria-label="休憩をスキップ" disabled><svg class="icon" viewBox="0 0 24 24" fill="none"><path d="M5 6l7 6-7 6V6zM13 6h2v12h-2z" fill="currentColor"/></svg></button>
         </div>
       </div>
-      <p class="muted" style="margin:6px 0 0">※「停止して記録」は<strong>作業時間のみ</strong>を履歴に保存します（休憩は記録しません）。</p>
+      <!-- 注釈：12px／太字なし -->
+      <p class="muted small-note" style="margin:6px 0 0">※「停止して記録」は作業時間のみを履歴に保存します（休憩は記録しません）。</p>
     </section>
 
     <!-- Logs & Stats -->
@@ -143,24 +148,18 @@
         <label>フォント：
           <select id="fontSel"><option value="sans">Noto Sans JP</option><option value="serif">Noto Serif JP</option></select>
         </label>
-        <!-- 「初期に戻す」ボタンは削除 -->
       </div>
 
       <div class="row" style="gap:12px;margin-top:10px">
         <label>背景色：<input type="color" id="bgColor" value="#ffffff" title="背景色（全体）"></label>
-
-        <!-- UI全体の文字色（手動のみ） -->
         <label>テキスト色（UI全体）：<input type="color" id="uiColor" value="#111827" title="画面全体の文字色（タイマー除く）"></label>
-
-        <!-- タイマー数字の色（独立） -->
         <label>タイマー色：<input type="color" id="timerColor" value="#000000" title="タイマーの数字色"></label>
 
-        <!-- ★ ここで改行してカード項目を次の段へ -->
         <span style="flex-basis:100%;height:0"></span>
 
         <label>カード背景色：<input type="color" id="cardColor" value="#ffffff" title="カード（ボックス/アプリバー共通）"></label>
         <label style="display:inline-flex;align-items:center;gap:6px">
-          <input type="checkbox" id="cardTrans" checked> 透過（白20%）
+          <input type="checkbox" id="cardTrans" checked> 背景色にあわせて透過
         </label>
 
         <button class="btn" id="applyColors">適用</button>
@@ -205,13 +204,13 @@
 const KEY='pomodoro.logs.v1', CATKEY='pomodoro.cats.v1';
 const FONTKEY='pomodoro.font.v1';
 
-const BGKEY='pomodoro.bg.v1';             // 作業中の背景
-const BGKEY_BREAK='pomodoro.bg.break.v1'; // 休憩中の背景
+const BGKEY='pomodoro.bg.v1';
+const BGKEY_BREAK='pomodoro.bg.break.v1';
 
 const BGOVR_KEY='pomodoro.override.bg.v1';
-const UIOVR_KEY='pomodoro.override.ui.v1';      // UI全体の文字色（手動）
-const FGOVR_KEY='pomodoro.override.fg.v1';      // タイマー数字色
-const CARDOVR_KEY='pomodoro.override.card.v1';  // カード色
+const UIOVR_KEY='pomodoro.override.ui.v1';
+const FGOVR_KEY='pomodoro.override.fg.v1';
+const CARDOVR_KEY='pomodoro.override.card.v1';
 const CARDTRANS_KEY='pomodoro.override.cardtrans.v1';
 
 const $=s=>document.querySelector(s), $$=s=>document.querySelectorAll(s);
@@ -230,11 +229,9 @@ function relLum({r,g,b}){ const f=v=>{v/=255;return v<=0.03928?v/12.92:Math.pow(
 function applyAppearance(fontKey){
   const r=document.documentElement.style;
 
-  /* UI: Sans固定、タイマー数字のみ Serif 切替 */
   r.setProperty('--font', FONTS.sans);
   r.setProperty('--font-timer', fontKey==='serif' ? FONTS.serif : FONTS.sans);
 
-  /* 背景色（ページ全体）とUI文字色 */
   const bg = load(BGOVR_KEY) || '#FFFFFF';
   r.setProperty('--bg', bg);
 
@@ -242,13 +239,11 @@ function applyAppearance(fontKey){
   r.setProperty('--ui-fg', ui);
   r.setProperty('--muted', `color-mix(in oklab, ${ui} 70%, ${bg} 30%)`);
 
-  /* カード色の決定（透過ONなら実色なし） */
   const trans = load(CARDTRANS_KEY);
   const cardTransOn = (trans===null?true:!!trans);
   const cardOv = load(CARDOVR_KEY);
   r.setProperty('--card', cardTransOn ? 'rgba(255,255,255,.20)' : (cardOv || '#FFFFFF'));
 
-  /* コントロール配色は“有効なカード色”を基準に判定 */
   const basisColor = (!cardTransOn && cardOv) ? cardOv : bg;
   const darkOnCard = (hexToRgb(basisColor) && relLum(hexToRgb(basisColor))<0.5);
 
@@ -266,18 +261,16 @@ function applyAppearance(fontKey){
     r.setProperty('--icons', ui);
   }
 
-  /* タイマー数字色（手動 or 既定黒） */
   const timerFg = load(FGOVR_KEY) || '#000000';
   r.setProperty('--fg-timer', timerFg);
 
-  /* プレビューの数字色も同期 */
   const pv = document.querySelector('#timerBgPreview')?.nextElementSibling;
   if(pv) pv.style.color = timerFg;
 
   save(FONTKEY,fontKey);
 }
 
-/* 背景画像（作業/休憩） */
+/* 背景画像 */
 let workBgUrl=null, breakBgUrl=null;
 function setWorkBg(dataUrl){
   workBgUrl = dataUrl || null;
@@ -316,11 +309,9 @@ function initUI(){
   const f=load(FONTKEY)||'sans';
   $('#fontSel').value=f; applyAppearance(f);
 
-  // 背景画像
   const savedWork=load(BGKEY); if(savedWork) setWorkBg(savedWork);
   const savedBreak=load(BGKEY_BREAK); if(savedBreak) setBreakBg(savedBreak);
 
-  // 個別色UIへ反映
   const bgOv=load(BGOVR_KEY), uiOv=load(UIOVR_KEY),
         timerOv=load(FGOVR_KEY), cardOv=load(CARDOVR_KEY), cardTr=load(CARDTRANS_KEY);
   if(bgOv)     $('#bgColor').value=bgOv;
@@ -332,7 +323,6 @@ function initUI(){
   const wm=(+$('#workMin').value||25)*60*1000; updateDisplay(wm); updateStatus('停止中');
   setTimerAppearance(); applyModeBg(); renderLogs(); drawDailyChart(); setupTabs();
 
-  // プレビュー透過固定
   const pv1=document.getElementById('timerBgPreview'); if(pv1) pv1.style.opacity=.7;
   const pv2=document.getElementById('timerBgBreakPreview'); if(pv2) pv2.style.opacity=.6;
 }
@@ -392,8 +382,6 @@ document.getElementById('rangeSel')?.addEventListener('change', e=>{ chartRange=
 
 /* ===== customize ===== */
 $('#fontSel').onchange = e => applyAppearance(e.target.value);
-
-/* リセットボタンは削除したため関連コードも削除 */
 
 $('#bgFile').onchange=e=>{ const f=e.target.files?.[0]; if(!f) return; const reader=new FileReader();
   reader.onload=()=>{ const dataUrl=reader.result; setWorkBg(dataUrl); save(BGKEY,dataUrl); applyModeBg(); };
