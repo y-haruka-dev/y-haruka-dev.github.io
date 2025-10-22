@@ -17,11 +17,12 @@
     --font:"Noto Sans JP",system-ui,-apple-system,"Segoe UI",Roboto,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif;
     --font-timer:"Noto Sans JP",system-ui,-apple-system,"Segoe UI",Roboto,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif;
 
-    --fg-timer:#000000;
-    --icons:var(--ui-fg);
+    --fg-timer:#000000;  /* タイマーの数字色 */
+    --icons:var(--ui-fg);/* 操作アイコン色 */
 
     --timer-box-h:clamp(220px,36vw,360px);
 
+    /* フィールド配色（カードの明暗で自動切替） */
     --field-bg:#ffffff; --field-fg:#111827;
     --field-border:#e5e7eb; --field-focus:#7dd3fc;
   }
@@ -35,20 +36,25 @@
     border:1px solid var(--line);
     border-radius:var(--radius);
     padding:16px;
-    box-shadow:none; /* ← 影をなくす */
+    box-shadow:none; /* 影なし */
   }
   .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
   .muted{color:var(--muted)}
-  .small-note{font-size:12px;font-weight:400} /* ← 注釈の体裁 */
+  .small-note{font-size:12px;font-weight:400}
 
+  /* アプリバー */
   .appbar{position:sticky;top:0;z-index:10;backdrop-filter:blur(8px);
     background:var(--card);border:1px solid var(--line);border-radius:16px;padding:10px 12px;margin-bottom:12px;
     display:flex;justify-content:space-between;align-items:center}
   .logo{font-weight:800}
+  .tabs{
+    display:flex;gap:6px;align-items:center;flex-wrap:nowrap;
+  }
   .tabs a{color:var(--ui-fg) !important;text-decoration:none !important;border:1px solid transparent;
-    display:inline-flex;gap:6px;align-items:center;padding:.45rem .7rem;border-radius:10px}
+    display:inline-flex;gap:6px;align-items:center;padding:.45rem .7rem;border-radius:10px;white-space:nowrap}
   .tabs a.active{border-color:var(--line);background:color-mix(in oklab,var(--bg) 10%, transparent)}
 
+  /* フォーム/ボタン */
   select,input,button{height:var(--btnh);padding:.6rem .8rem;border:1px solid var(--field-border);border-radius:10px;background:var(--field-bg);color:var(--field-fg)}
   input[type=number]{width:88px}
   input::placeholder{color:color-mix(in oklab,var(--field-fg) 70%,var(--field-bg) 30%)}
@@ -57,9 +63,10 @@
   .primary{background:linear-gradient(135deg,var(--brand),var(--brand2));color:#081018;border:none;font-weight:700}
   .danger{border-color:#ff6b6b}
 
+  /* タイマー */
   .timer-wrap{display:flex;flex-direction:column;align-items:center;padding:56px 8px 18px}
   .timer-box{position:relative;width:min(92vw,780px);height:var(--timer-box-h);display:flex;align-items:center;justify-content:center;border-radius:18px;overflow:hidden;margin:20px 0 32px}
-  .timer-bg{position:absolute;inset:0;background-size:cover;background-position:center;opacity:.7;pointer-events:none;filter:saturate(.9) blur(.3px)}
+  .timer-bg{position:absolute;inset:0;background-size:cover;background-position:center;opacity:.7;pointer-events:none;filter:saturate(.9) blur(.3px)} /* 作業時：30%透過 */
   .timer{position:relative;font-weight:800;font-size:clamp(72px,14vw,140px);letter-spacing:.04em;text-align:center;margin:0;color:var(--fg-timer);font-family:var(--font-timer)}
   .timer.is-break{opacity:.25;filter:grayscale(.35) saturate(.5)}
   .btn-row{display:flex;gap:14px;justify-content:center;margin-top:22px;margin-bottom:28px}
@@ -67,11 +74,46 @@
   .primary.icon-btn{color:#081018}
   .icon{width:22px;height:22px}
 
+  /* テーブル/グリッド */
   table{width:100%;border-collapse:collapse;margin-top:10px;font-size:15px}
   th,td{border-bottom:1px solid var(--line);padding:.55rem .4rem;text-align:left}
   .right{text-align:right}
   .grid{display:grid;gap:14px}
   @media (min-width:600px){ .grid-2{grid-template-columns:1.2fr 1fr} }
+
+  /* ===== スマホ最適化（～480px） ===== */
+  @media (max-width:480px){
+    .wrap{padding:12px}
+    .appbar{padding:8px 10px}
+    .tabs{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+    .tabs::-webkit-scrollbar{display:none}
+    .tabs a{padding:.4rem .6rem;font-size:14px}
+
+    /* 基本設定の行を“縦積み優先”に */
+    [role="group"][aria-label="基本設定"] > label{flex:1 1 100%; min-width:0}
+    #newCat{flex:1 1 100%}
+    input[type=number]{width:100%}
+
+    /* タイマー枠の高さ/数字サイズをやや控えめに */
+    :root{ --timer-box-h: clamp(180px, 42vw, 300px); }
+    .timer{font-size:clamp(56px, 18vw, 130px)}
+    .timer-wrap{padding:40px 8px 14px}
+
+    /* ボタン少し小さめ&間隔詰め */
+    .icon-btn{width:48px;height:48px;border-radius:12px}
+    .icon{width:20px;height:20px}
+    .btn-row{gap:10px;margin-top:16px;margin-bottom:20px}
+
+    /* テーブル詰める */
+    table{font-size:14px}
+    th,td{padding:.5rem .35rem}
+  }
+
+  /* さらに狭い端末（～360px）で微調整 */
+  @media (max-width:360px){
+    .timer{font-size:clamp(48px, 19vw, 120px)}
+    .tabs a{font-size:13px}
+  }
 </style>
 </head>
 <body>
@@ -116,7 +158,6 @@
           <button class="btn icon-btn" id="skipBreak" title="休憩をスキップ" aria-label="休憩をスキップ" disabled><svg class="icon" viewBox="0 0 24 24" fill="none"><path d="M5 6l7 6-7 6V6zM13 6h2v12h-2z" fill="currentColor"/></svg></button>
         </div>
       </div>
-      <!-- 注釈：12px／太字なし -->
       <p class="muted small-note" style="margin:6px 0 0">※「停止して記録」は作業時間のみを履歴に保存します（休憩は記録しません）。</p>
     </section>
 
@@ -125,18 +166,27 @@
       <div id="view-logs" data-view="logs" class="card" hidden>
         <div class="row" style="justify-content:space-between">
           <div class="row" style="gap:8px">
-            <button class="btn" id="exportBtn" title="CSVエクスポート" aria-label="CSVエクスポート"><svg class="icon" viewBox="0 0 24 24" fill="none"><path d="M12 3v12m0 0l-3-3m3 3l3-3M5 18h14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-            <button class="btn danger" id="clearBtn" title="履歴を全消去" aria-label="履歴を全消去"><svg class="icon" viewBox="0 0 24 24" fill="none"><path d="M6 7h12M9 7v10m6-10v10M8 7l1-2h6l1 2M6 7l1 12h10l1-12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+            <button class="btn" id="exportBtn" title="CSVエクスポート" aria-label="CSVエクスポート">
+              <svg class="icon" viewBox="0 0 24 24" fill="none"><path d="M12 3v12m0 0l-3-3m3 3l3-3M5 18h14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <button class="btn danger" id="clearBtn" title="履歴を全消去" aria-label="履歴を全消去">
+              <svg class="icon" viewBox="0 0 24 24" fill="none"><path d="M6 7h12M9 7v10m6-10v10M8 7l1-2h6l1 2M6 7l1 12h10l1-12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
           </div>
           <span class="muted" id="totals"></span>
         </div>
-        <table id="logTable"><thead><tr><th>日時</th><th>カテゴリ</th><th class="right">作業時間</th></tr></thead><tbody></tbody></table>
+        <table id="logTable">
+          <thead><tr><th>日時</th><th>カテゴリ</th><th class="right">作業時間</th></tr></thead>
+          <tbody></tbody>
+        </table>
       </div>
 
       <div id="view-stats" data-view="stats" class="card" hidden>
         <div class="row" style="justify-content:space-between;align-items:center">
           <span class="muted">直近 <span id="rangeInfo">14</span> 日</span>
-          <label>表示範囲：<select id="rangeSel"><option value="7">7</option><option value="14" selected>14</option><option value="30">30</option></select> 日</label>
+          <label>表示範囲：
+            <select id="rangeSel"><option value="7">7</option><option value="14" selected>14</option><option value="30">30</option></select> 日
+          </label>
         </div>
         <canvas id="dailyChart" height="220"></canvas>
       </div>
@@ -229,24 +279,26 @@ function relLum({r,g,b}){ const f=v=>{v/=255;return v<=0.03928?v/12.92:Math.pow(
 function applyAppearance(fontKey){
   const r=document.documentElement.style;
 
+  /* UIはSans固定／タイマー数字だけSerif切替 */
   r.setProperty('--font', FONTS.sans);
   r.setProperty('--font-timer', fontKey==='serif' ? FONTS.serif : FONTS.sans);
 
+  /* 背景＆UIテキスト色 */
   const bg = load(BGOVR_KEY) || '#FFFFFF';
   r.setProperty('--bg', bg);
-
   const ui = load(UIOVR_KEY) || ((hexToRgb(bg) && relLum(hexToRgb(bg))<0.5) ? '#FFFFFF' : '#111827');
   r.setProperty('--ui-fg', ui);
   r.setProperty('--muted', `color-mix(in oklab, ${ui} 70%, ${bg} 30%)`);
 
+  /* カード（透過ONなら半透明固定） */
   const trans = load(CARDTRANS_KEY);
   const cardTransOn = (trans===null?true:!!trans);
   const cardOv = load(CARDOVR_KEY);
   r.setProperty('--card', cardTransOn ? 'rgba(255,255,255,.20)' : (cardOv || '#FFFFFF'));
 
+  /* コントロール配色は“有効なカード色”基準 */
   const basisColor = (!cardTransOn && cardOv) ? cardOv : bg;
   const darkOnCard = (hexToRgb(basisColor) && relLum(hexToRgb(basisColor))<0.5);
-
   if(darkOnCard){
     r.setProperty('--field-bg','#0f1e26');
     r.setProperty('--field-fg','#ffffff');
@@ -261,6 +313,7 @@ function applyAppearance(fontKey){
     r.setProperty('--icons', ui);
   }
 
+  /* タイマー数字色（手動優先） */
   const timerFg = load(FGOVR_KEY) || '#000000';
   r.setProperty('--fg-timer', timerFg);
 
@@ -270,7 +323,7 @@ function applyAppearance(fontKey){
   save(FONTKEY,fontKey);
 }
 
-/* 背景画像 */
+/* 背景画像（作業/休憩） */
 let workBgUrl=null, breakBgUrl=null;
 function setWorkBg(dataUrl){
   workBgUrl = dataUrl || null;
@@ -412,7 +465,7 @@ $('#clearColors').onclick=()=>{
 /* ===== beep ===== */
 function beep(){ try{ const a=new (window.AudioContext||window.webkitAudioContext)(); const o=a.createOscillator(), g=a.createGain(); o.connect(g); g.connect(a.destination); o.type='sine'; o.frequency.value=880; g.gain.setValueAtTime(0.05,a.currentTime); o.start(); setTimeout(()=>{ o.stop(); a.close(); },250);}catch{} }
 
-/* ===== binds ===== */
+/* ===== timer binds ===== */
 $('#startBtn').onclick=startTimer; $('#pauseBtn').onclick=pauseTimer; $('#resumeBtn').onclick=resumeTimer;
 $('#stopBtn').onclick=stopAndLog; $('#skipBreak').onclick=()=>{ if(mode==='break') toWork(); };
 $('#workMin').oninput=()=>{ if(mode==='idle'){ updateDisplay((+$('#workMin').value||25)*60*1000); } };
