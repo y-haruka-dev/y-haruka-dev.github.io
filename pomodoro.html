@@ -8,7 +8,7 @@
 <style>
   :root{
     --bg:#ffffff; --ui-fg:#111827; --muted:#5a6473;
-    --card:rgba(255,255,255,.20); /* 既定：半透明カード（アプリバーも同じ） */
+    --card:rgba(255,255,255,.20);
     --line:#e6eaf1;
     --brand:#5cc9ee; --brand2:#9aa7ff;
     --radius:12px;
@@ -17,44 +17,41 @@
     --font:"Noto Sans JP",system-ui,-apple-system,"Segoe UI",Roboto,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif;
     --font-timer:"Noto Sans JP",system-ui,-apple-system,"Segoe UI",Roboto,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif;
 
-    --fg-timer:#000000;  /* タイマーの数字色 */
-    --icons:var(--ui-fg);/* 操作アイコン色 */
+    --fg-timer:#000000;
+    --icons:var(--ui-fg);
 
     --timer-box-h:clamp(220px,36vw,360px);
 
-    /* フィールド配色（カードの明暗で自動切替） */
     --field-bg:#ffffff; --field-fg:#111827;
     --field-border:#e5e7eb; --field-focus:#7dd3fc;
+
+    /* モバイル：ボトムナビ高さ */
+    --bottom-nav-h:64px;
   }
 
   *{box-sizing:border-box}
   html{font-size:17px}
   body{margin:0;background:var(--bg);color:var(--ui-fg);font-family:var(--font);line-height:1.7}
   .wrap{max-width:var(--wrap);margin:auto;padding:16px}
-  .card{
-    background:var(--card);
-    border:1px solid var(--line);
-    border-radius:var(--radius);
-    padding:16px;
-    box-shadow:none; /* 影なし */
-  }
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px;box-shadow:none}
   .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
   .muted{color:var(--muted)}
   .small-note{font-size:12px;font-weight:400}
 
-  /* アプリバー */
+  /* 視覚的に隠す（スクリーンリーダー用） */
+  .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+
+  /* App bar */
   .appbar{position:sticky;top:0;z-index:10;backdrop-filter:blur(8px);
     background:var(--card);border:1px solid var(--line);border-radius:16px;padding:10px 12px;margin-bottom:12px;
     display:flex;justify-content:space-between;align-items:center}
   .logo{font-weight:800}
-  .tabs{
-    display:flex;gap:6px;align-items:center;flex-wrap:nowrap;
-  }
+  .tabs{display:flex;gap:6px;align-items:center;flex-wrap:nowrap}
   .tabs a{color:var(--ui-fg) !important;text-decoration:none !important;border:1px solid transparent;
     display:inline-flex;gap:6px;align-items:center;padding:.45rem .7rem;border-radius:10px;white-space:nowrap}
   .tabs a.active{border-color:var(--line);background:color-mix(in oklab,var(--bg) 10%, transparent)}
 
-  /* フォーム/ボタン */
+  /* Form/Buttons */
   select,input,button{height:var(--btnh);padding:.6rem .8rem;border:1px solid var(--field-border);border-radius:10px;background:var(--field-bg);color:var(--field-fg)}
   input[type=number]{width:88px}
   input::placeholder{color:color-mix(in oklab,var(--field-fg) 70%,var(--field-bg) 30%)}
@@ -63,10 +60,10 @@
   .primary{background:linear-gradient(135deg,var(--brand),var(--brand2));color:#081018;border:none;font-weight:700}
   .danger{border-color:#ff6b6b}
 
-  /* タイマー */
+  /* Timer */
   .timer-wrap{display:flex;flex-direction:column;align-items:center;padding:56px 8px 18px}
   .timer-box{position:relative;width:min(92vw,780px);height:var(--timer-box-h);display:flex;align-items:center;justify-content:center;border-radius:18px;overflow:hidden;margin:20px 0 32px}
-  .timer-bg{position:absolute;inset:0;background-size:cover;background-position:center;opacity:.7;pointer-events:none;filter:saturate(.9) blur(.3px)} /* 作業時：30%透過 */
+  .timer-bg{position:absolute;inset:0;background-size:cover;background-position:center;opacity:.7;pointer-events:none;filter:saturate(.9) blur(.3px)}
   .timer{position:relative;font-weight:800;font-size:clamp(72px,14vw,140px);letter-spacing:.04em;text-align:center;margin:0;color:var(--fg-timer);font-family:var(--font-timer)}
   .timer.is-break{opacity:.25;filter:grayscale(.35) saturate(.5)}
   .btn-row{display:flex;gap:14px;justify-content:center;margin-top:22px;margin-bottom:28px}
@@ -74,46 +71,47 @@
   .primary.icon-btn{color:#081018}
   .icon{width:22px;height:22px}
 
-  /* テーブル/グリッド */
+  /* Table/Grid */
   table{width:100%;border-collapse:collapse;margin-top:10px;font-size:15px}
   th,td{border-bottom:1px solid var(--line);padding:.55rem .4rem;text-align:left}
   .right{text-align:right}
   .grid{display:grid;gap:14px}
   @media (min-width:600px){ .grid-2{grid-template-columns:1.2fr 1fr} }
 
-  /* ===== スマホ最適化（～480px） ===== */
+  /* ===== Bottom nav (mobile) ===== */
+  .bottom-tabs{display:none}
   @media (max-width:480px){
-    .wrap{padding:12px}
+    .wrap{padding:12px; padding-bottom: calc(12px + var(--bottom-nav-h) + env(safe-area-inset-bottom))} /* コンテンツが隠れないよう余白 */
     .appbar{padding:8px 10px}
-    .tabs{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
-    .tabs::-webkit-scrollbar{display:none}
-    .tabs a{padding:.4rem .6rem;font-size:14px}
+    .tabs{display:none} /* 上部タブを隠す */
 
-    /* 基本設定の行を“縦積み優先”に */
-    [role="group"][aria-label="基本設定"] > label{flex:1 1 100%; min-width:0}
+    /* 基本設定：縦積み */
+    [role="group"][aria-label="基本設定"] > label{flex:1 1 100%;min-width:0}
     #newCat{flex:1 1 100%}
     input[type=number]{width:100%}
 
-    /* タイマー枠の高さ/数字サイズをやや控えめに */
     :root{ --timer-box-h: clamp(180px, 42vw, 300px); }
     .timer{font-size:clamp(56px, 18vw, 130px)}
     .timer-wrap{padding:40px 8px 14px}
-
-    /* ボタン少し小さめ&間隔詰め */
     .icon-btn{width:48px;height:48px;border-radius:12px}
     .icon{width:20px;height:20px}
     .btn-row{gap:10px;margin-top:16px;margin-bottom:20px}
+    table{font-size:14px} th,td{padding:.5rem .35rem}
 
-    /* テーブル詰める */
-    table{font-size:14px}
-    th,td{padding:.5rem .35rem}
+    /* 下部ナビ */
+    .bottom-tabs{
+      position:fixed;left:0;right:0;bottom:0;z-index:50;
+      height:var(--bottom-nav-h);
+      padding:8px max(8px,env(safe-area-inset-left)) calc(8px + env(safe-area-inset-bottom)) max(8px,env(safe-area-inset-right));
+      display:flex;justify-content:space-around;align-items:center;
+      background:var(--card);border-top:1px solid var(--line);backdrop-filter:blur(8px)
+    }
+    .bt{width:48px;height:48px;border-radius:12px;border:1px solid transparent;background:transparent;color:var(--icons);
+        display:flex;align-items:center;justify-content:center}
+    .bt.active{border-color:var(--line);background:color-mix(in oklab,var(--bg) 10%, transparent)}
+    .bt svg{width:22px;height:22px}
   }
-
-  /* さらに狭い端末（～360px）で微調整 */
-  @media (max-width:360px){
-    .timer{font-size:clamp(48px, 19vw, 120px)}
-    .tabs a{font-size:13px}
-  }
+  @media (max-width:360px){ .timer{font-size:clamp(48px, 19vw, 120px)} }
 </style>
 </head>
 <body>
@@ -201,13 +199,13 @@
       </div>
 
       <div class="row" style="gap:12px;margin-top:10px">
-        <label>背景色：<input type="color" id="bgColor" value="#ffffff" title="背景色（全体）"></label>
-        <label>テキスト色（UI全体）：<input type="color" id="uiColor" value="#111827" title="画面全体の文字色（タイマー除く）"></label>
-        <label>タイマー色：<input type="color" id="timerColor" value="#000000" title="タイマーの数字色"></label>
+        <label>背景色：<input type="color" id="bgColor" value="#ffffff"></label>
+        <label>テキスト色（UI全体）：<input type="color" id="uiColor" value="#111827"></label>
+        <label>タイマー色：<input type="color" id="timerColor" value="#000000"></label>
 
         <span style="flex-basis:100%;height:0"></span>
 
-        <label>カード背景色：<input type="color" id="cardColor" value="#ffffff" title="カード（ボックス/アプリバー共通）"></label>
+        <label>カード背景色：<input type="color" id="cardColor" value="#ffffff"></label>
         <label style="display:inline-flex;align-items:center;gap:6px">
           <input type="checkbox" id="cardTrans" checked> 背景色にあわせて透過
         </label>
@@ -223,18 +221,6 @@
         <button class="btn danger" id="clearBgBreak">休憩背景を削除</button>
         <span class="muted">※ 端末内に保存（localStorage）。</span>
       </div>
-
-      <div class="card" style="margin-top:12px">
-        <strong>プレビュー</strong>
-        <div class="timer-box" style="margin-top:10px">
-          <div class="timer-bg" id="timerBgPreview" style="opacity:.7"></div>
-          <div class="timer" style="margin:0;padding:8px 0">00:00</div>
-        </div>
-        <div class="timer-box" style="margin-top:10px">
-          <div class="timer-bg" id="timerBgBreakPreview" style="opacity:.6"></div>
-          <div class="timer" style="margin:0;padding:8px 0;opacity:.6">Break</div>
-        </div>
-      </div>
     </section>
 
     <!-- Clock -->
@@ -247,164 +233,130 @@
         <p class="muted" id="clockDate" style="text-align:center;margin-top:4px;"></p>
       </div>
     </section>
+
+    <!-- ===== Bottom tabs (mobile only) ===== -->
+    <nav class="bottom-tabs" aria-label="ボトムナビ">
+      <button class="bt" data-tab="clock" aria-label="時計">
+        <!-- clock icon -->
+        <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.7"/><path d="M12 7v5l3 2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span class="sr-only">時計</span>
+      </button>
+      <button class="bt active" data-tab="timer" aria-label="タイマー">
+        <!-- timer icon -->
+        <svg viewBox="0 0 24 24" fill="none"><rect x="6" y="5" width="12" height="14" rx="6" stroke="currentColor" stroke-width="1.7"/><path d="M10 3h4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/></svg>
+        <span class="sr-only">タイマー</span>
+      </button>
+      <button class="bt" data-tab="logs" aria-label="履歴">
+        <!-- list icon -->
+        <svg viewBox="0 0 24 24" fill="none"><path d="M8 7h11M8 12h11M8 17h11" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="4.5" cy="7" r="1.2" fill="currentColor"/><circle cx="4.5" cy="12" r="1.2" fill="currentColor"/><circle cx="4.5" cy="17" r="1.2" fill="currentColor"/></svg>
+        <span class="sr-only">履歴</span>
+      </button>
+      <button class="bt" data-tab="stats" aria-label="日別集計">
+        <!-- bar chart icon -->
+        <svg viewBox="0 0 24 24" fill="none"><rect x="5" y="12" width="3" height="7" rx="1" fill="currentColor"/><rect x="10.5" y="9" width="3" height="10" rx="1" fill="currentColor"/><rect x="16" y="6" width="3" height="13" rx="1" fill="currentColor"/></svg>
+        <span class="sr-only">日別集計</span>
+      </button>
+      <button class="bt" data-tab="custom" aria-label="カスタマイズ">
+        <!-- sliders icon -->
+        <svg viewBox="0 0 24 24" fill="none"><path d="M4 7h10M4 17h16M14 7v4M10 17v-6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+        <span class="sr-only">カスタマイズ</span>
+      </button>
+    </nav>
   </div>
 
 <script>
-/* ===== keys / helpers ===== */
+/* ===== keys / helpers (既存のまま) ===== */
 const KEY='pomodoro.logs.v1', CATKEY='pomodoro.cats.v1';
 const FONTKEY='pomodoro.font.v1';
-
 const BGKEY='pomodoro.bg.v1';
 const BGKEY_BREAK='pomodoro.bg.break.v1';
-
 const BGOVR_KEY='pomodoro.override.bg.v1';
 const UIOVR_KEY='pomodoro.override.ui.v1';
 const FGOVR_KEY='pomodoro.override.fg.v1';
 const CARDOVR_KEY='pomodoro.override.card.v1';
 const CARDTRANS_KEY='pomodoro.override.cardtrans.v1';
-
 const $=s=>document.querySelector(s), $$=s=>document.querySelectorAll(s);
 const pad=n=>String(n).padStart(2,'0');
 function load(k){ try{ return JSON.parse(localStorage.getItem(k)) }catch{ return null } }
 function save(k,v){ localStorage.setItem(k, JSON.stringify(v)) }
 function escapeHtml(s){return (s||'').replace(/[&<>"']/g,m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[m]))}
-
-const FONTS={sans:'"Noto Sans JP",system-ui,-apple-system,"Segoe UI",Roboto,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif',
-             serif:'"Noto Serif JP",serif'};
-
-/* 輝度（明るさ）判定 */
+const FONTS={sans:'"Noto Sans JP",system-ui,-apple-system,"Segoe UI",Roboto,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif',serif:'"Noto Serif JP",serif'};
 function hexToRgb(hex){ const m=(hex||'').trim().match(/^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i); return m?{r:parseInt(m[1],16),g:parseInt(m[2],16),b:parseInt(m[3],16)}:null; }
 function relLum({r,g,b}){ const f=v=>{v/=255;return v<=0.03928?v/12.92:Math.pow((v+0.055)/1.055,2.4)}; return 0.2126*f(r)+0.7152*f(g)+0.0722*f(b); }
 
+/* ===== appearance（省略：前回版と同じ） ===== */
 function applyAppearance(fontKey){
   const r=document.documentElement.style;
-
-  /* UIはSans固定／タイマー数字だけSerif切替 */
   r.setProperty('--font', FONTS.sans);
   r.setProperty('--font-timer', fontKey==='serif' ? FONTS.serif : FONTS.sans);
-
-  /* 背景＆UIテキスト色 */
-  const bg = load(BGOVR_KEY) || '#FFFFFF';
-  r.setProperty('--bg', bg);
+  const bg = load(BGOVR_KEY) || '#FFFFFF'; r.setProperty('--bg', bg);
   const ui = load(UIOVR_KEY) || ((hexToRgb(bg) && relLum(hexToRgb(bg))<0.5) ? '#FFFFFF' : '#111827');
   r.setProperty('--ui-fg', ui);
   r.setProperty('--muted', `color-mix(in oklab, ${ui} 70%, ${bg} 30%)`);
-
-  /* カード（透過ONなら半透明固定） */
-  const trans = load(CARDTRANS_KEY);
-  const cardTransOn = (trans===null?true:!!trans);
-  const cardOv = load(CARDOVR_KEY);
+  const trans = load(CARDTRANS_KEY); const cardTransOn = (trans===null?true:!!trans); const cardOv = load(CARDOVR_KEY);
   r.setProperty('--card', cardTransOn ? 'rgba(255,255,255,.20)' : (cardOv || '#FFFFFF'));
-
-  /* コントロール配色は“有効なカード色”基準 */
   const basisColor = (!cardTransOn && cardOv) ? cardOv : bg;
   const darkOnCard = (hexToRgb(basisColor) && relLum(hexToRgb(basisColor))<0.5);
   if(darkOnCard){
-    r.setProperty('--field-bg','#0f1e26');
-    r.setProperty('--field-fg','#ffffff');
-    r.setProperty('--field-border','#355560');
-    r.setProperty('--field-focus','#68c6ff');
-    r.setProperty('--icons','#ffffff');
+    r.setProperty('--field-bg','#0f1e26'); r.setProperty('--field-fg','#ffffff');
+    r.setProperty('--field-border','#355560'); r.setProperty('--field-focus','#68c6ff'); r.setProperty('--icons','#ffffff');
   }else{
-    r.setProperty('--field-bg','#ffffff');
-    r.setProperty('--field-fg','#111827');
-    r.setProperty('--field-border','#e5e7eb');
-    r.setProperty('--field-focus','#7dd3fc');
-    r.setProperty('--icons', ui);
+    r.setProperty('--field-bg','#ffffff'); r.setProperty('--field-fg','#111827');
+    r.setProperty('--field-border','#e5e7eb'); r.setProperty('--field-focus','#7dd3fc'); r.setProperty('--icons', ui);
   }
-
-  /* タイマー数字色（手動優先） */
-  const timerFg = load(FGOVR_KEY) || '#000000';
-  r.setProperty('--fg-timer', timerFg);
-
-  const pv = document.querySelector('#timerBgPreview')?.nextElementSibling;
-  if(pv) pv.style.color = timerFg;
-
+  const timerFg = load(FGOVR_KEY) || '#000000'; r.setProperty('--fg-timer', timerFg);
+  const pv = document.querySelector('#timerBgPreview')?.nextElementSibling; if(pv) pv.style.color = timerFg;
   save(FONTKEY,fontKey);
 }
 
-/* 背景画像（作業/休憩） */
+/* ===== 背景画像（省略：前回版と同じ） ===== */
 let workBgUrl=null, breakBgUrl=null;
-function setWorkBg(dataUrl){
-  workBgUrl = dataUrl || null;
-  ['#timerBg','#timerBgPreview','#clockBg'].forEach(sel=>{
-    const n=document.querySelector(sel); if(n) n.style.backgroundImage=workBgUrl?`url('${workBgUrl}')`:'none';
-  });
-}
-function setBreakBg(dataUrl){
-  breakBgUrl = dataUrl || null;
-  const pv=document.querySelector('#timerBgBreakPreview');
-  if(pv) pv.style.backgroundImage = breakBgUrl?`url('${breakBgUrl}')`:'none';
-}
-function applyModeBg(){
-  const el=document.getElementById('timerBg');
-  if(!el) return;
-  if(mode==='break'){
-    el.style.opacity = .6; /* 休憩＝40%透過 */
-    el.style.backgroundImage = breakBgUrl?`url('${breakBgUrl}')`:(workBgUrl?`url('${workBgUrl}')`:'none');
-  }else{
-    el.style.opacity = .7; /* 作業＝30%透過 */
-    el.style.backgroundImage = workBgUrl?`url('${workBgUrl}')`:'none';
-  }
-}
+function setWorkBg(dataUrl){ workBgUrl=dataUrl||null; ['#timerBg','#timerBgPreview','#clockBg'].forEach(sel=>{ const n=document.querySelector(sel); if(n) n.style.backgroundImage=workBgUrl?`url('${workBgUrl}')`:'none'; }); }
+function setBreakBg(dataUrl){ breakBgUrl=dataUrl||null; const pv=document.querySelector('#timerBgBreakPreview'); if(pv) pv.style.backgroundImage=breakBgUrl?`url('${breakBgUrl}')`:'none'; }
+function applyModeBg(){ const el=document.getElementById('timerBg'); if(!el) return; if(mode==='break'){ el.style.opacity=.6; el.style.backgroundImage=breakBgUrl?`url('${breakBgUrl}')`:(workBgUrl?`url('${workBgUrl}')`:'none'); }else{ el.style.opacity=.7; el.style.backgroundImage=workBgUrl?`url('${workBgUrl}')`:'none'; } }
 
 /* ===== state ===== */
-let logs=load(KEY)||[];
-let categories=load(CATKEY)||['学習','開発','家事','その他']; save(CATKEY,categories);
+let logs=load(KEY)||[]; let categories=load(CATKEY)||['学習','開発','家事','その他']; save(CATKEY,categories);
 let mode='idle', startAt=0, elapsedWork=0, remain=0, ticker=null;
 
 /* ===== init ===== */
-function renderCategoryOptions(selected){
-  $('#category').innerHTML=categories.map(c=>`<option ${selected===c?'selected':''}>${escapeHtml(c)}</option>`).join('');
-}
+function renderCategoryOptions(selected){ $('#category').innerHTML=categories.map(c=>`<option ${selected===c?'selected':''}>${escapeHtml(c)}</option>`).join(''); }
 function initUI(){
   renderCategoryOptions();
-  const f=load(FONTKEY)||'sans';
-  $('#fontSel').value=f; applyAppearance(f);
-
+  const f=load(FONTKEY)||'sans'; $('#fontSel').value=f; applyAppearance(f);
   const savedWork=load(BGKEY); if(savedWork) setWorkBg(savedWork);
   const savedBreak=load(BGKEY_BREAK); if(savedBreak) setBreakBg(savedBreak);
-
-  const bgOv=load(BGOVR_KEY), uiOv=load(UIOVR_KEY),
-        timerOv=load(FGOVR_KEY), cardOv=load(CARDOVR_KEY), cardTr=load(CARDTRANS_KEY);
-  if(bgOv)     $('#bgColor').value=bgOv;
-  if(uiOv)     $('#uiColor').value=uiOv;
-  if(timerOv)  $('#timerColor').value=timerOv;
-  if(cardOv)   $('#cardColor').value=cardOv;
-  $('#cardTrans').checked = (cardTr===null?true:!!cardTr);
-
+  const bgOv=load(BGOVR_KEY), uiOv=load(UIOVR_KEY), timerOv=load(FGOVR_KEY), cardOv=load(CARDOVR_KEY), cardTr=load(CARDTRANS_KEY);
+  if(bgOv) $('#bgColor').value=bgOv; if(uiOv) $('#uiColor').value=uiOv; if(timerOv) $('#timerColor').value=timerOv; if(cardOv) $('#cardColor').value=cardOv;
+  $('#cardTrans').checked=(cardTr===null?true:!!cardTr);
   const wm=(+$('#workMin').value||25)*60*1000; updateDisplay(wm); updateStatus('停止中');
   setTimerAppearance(); applyModeBg(); renderLogs(); drawDailyChart(); setupTabs();
-
   const pv1=document.getElementById('timerBgPreview'); if(pv1) pv1.style.opacity=.7;
   const pv2=document.getElementById('timerBgBreakPreview'); if(pv2) pv2.style.opacity=.6;
 }
 function updateDisplay(ms){ const m=Math.floor(ms/60000), s=Math.floor((ms%60000)/1000); $('#display').textContent=`${pad(m)}:${pad(s)}` }
 function updateStatus(t){ $('#status').textContent=t }
 
-/* ===== tabs ===== */
+/* ===== tabs：上部タブ＆下部ナビを同期 ===== */
 let clockTimer=null;
 function setupTabs(){
   const show=(name)=>{
     $$('[data-view]').forEach(v=>v.hidden=(v.dataset.view!==name));
-    $$('.tabs a').forEach(a=>a.classList.toggle('active',a.dataset.tab===name));
+    // 上部タブ & 下部ナビのアクティブ同期
+    [...$$('.tabs a'), ...$$('.bottom-tabs .bt')].forEach(el=>el.classList.toggle('active', el.dataset.tab===name));
     history.replaceState(null,'','#'+name);
     if(name==='clock') startClock(); else stopClock();
   };
   const hash=(location.hash||'#timer').replace('#','');
   show(['timer','logs','stats','custom','clock'].includes(hash)?hash:'timer');
+
   $$('.tabs a').forEach(a=>a.onclick=(e)=>{e.preventDefault();show(a.dataset.tab);});
+  $$('.bottom-tabs .bt').forEach(b=>b.onclick=()=>show(b.dataset.tab));
 }
 
 /* ===== clock ===== */
 const two=n=>String(n).padStart(2,'0');
-function renderClock(){
-  const now=new Date();
-  $('#clockDisplay').textContent=`${two(now.getHours())}:${two(now.getMinutes())}:${two(now.getSeconds())}`;
-  const y=now.getFullYear(), mo=two(now.getMonth()+1), d=two(now.getDate());
-  const wd=["日","月","火","水","木","金","土"][now.getDay()];
-  $('#clockDate').textContent=`${y} ${mo}/${d} (${wd})`;
-}
+function renderClock(){ const now=new Date(); $('#clockDisplay').textContent=`${two(now.getHours())}:${two(now.getMinutes())}:${two(now.getSeconds())}`; const y=now.getFullYear(), mo=two(now.getMonth()+1), d=two(now.getDate()); const wd=["日","月","火","水","木","金","土"][now.getDay()]; $('#clockDate').textContent=`${y} ${mo}/${d} (${wd})`; }
 function startClock(){ if(clockTimer) return; applyModeBg(); renderClock(); clockTimer=setInterval(renderClock,1000); }
 function stopClock(){ if(clockTimer){ clearInterval(clockTimer); clockTimer=null; } }
 
@@ -424,48 +376,25 @@ function tick(){ clearInterval(ticker); ticker=setInterval(()=>{ const left=Math
 $('#addCat').onclick=()=>{ const v=$('#newCat').value.trim(); if(!v) return; if(!categories.includes(v)){ categories.push(v); save(CATKEY,categories); renderCategoryOptions(v);} else { $('#category').value=v; } $('#newCat').value=''; };
 $('#delCat').onclick=()=>{ const sel=$('#category').value; if(!sel) return; if(categories.length<=1){ alert('カテゴリは最低1つ必要です。'); return; } if(!confirm(`「${sel}」を削除しますか？`)) return; categories=categories.filter(c=>c!==sel); save(CATKEY,categories); renderCategoryOptions(categories[0]); };
 
-/* ===== logs & chart ===== */
+/* ===== logs & chart（省略：前回版のまま） ===== */
 function fmtMin(ms){ return `${Math.round(ms/60000)}分`; }
 function renderLogs(){ const tb=$('#logTable tbody'); tb.innerHTML=''; let byCat={}; for(const x of logs){ byCat[x.category]=(byCat[x.category]||0)+x.ms; const tr=document.createElement('tr'); const d=new Date(x.at); tr.innerHTML=`<td>${d.toLocaleString()}</td><td>${escapeHtml(x.category)}</td><td class="right">${fmtMin(x.ms)}</td>`; tb.appendChild(tr);} const pairs=Object.entries(byCat).map(([k,v])=>`${k}:${fmtMin(v)}`).join(' ／ '); $('#totals').textContent=pairs?`カテゴリ別合計 → ${pairs}`:'まだ記録はありません'; }
 $('#exportBtn').onclick=()=>{ const head='datetime,category,minutes\n'; const rows=logs.map(x=>`${new Date(x.at).toISOString()},${String(x.category).replaceAll(',',' ')},${Math.round(x.ms/60000)}`).join('\n'); const blob=new Blob([head+rows],{type:'text/csv'}); const a=Object.assign(document.createElement('a'),{href:URL.createObjectURL(blob),download:'pomodoro_logs.csv'}); a.click(); URL.revokeObjectURL(a.href); };
-
 let chartRange=14; const dpr=window.devicePixelRatio||1;
 function drawDailyChart(){ const cvs=document.getElementById('dailyChart'); if(!cvs) return; const ctx=cvs.getContext('2d'); const cssW=cvs.clientWidth||600, cssH=parseInt(cvs.getAttribute('height'))||220; cvs.width=Math.round(cssW*dpr); cvs.height=Math.round(cssH*dpr); ctx.setTransform(dpr,0,0,dpr,0,0); const today=new Date(); today.setHours(0,0,0,0); const labels=[]; for(let i=chartRange-1;i>=0;i--){ const d=new Date(today); d.setDate(today.getDate()-i); labels.push(`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`);} const perDay=Object.fromEntries(labels.map(k=>[k,0])); for(const x of logs){ const d=new Date(x.at); const k=`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; if(k in perDay) perDay[k]+=Math.round(x.ms/60000);} const values=labels.map(k=>perDay[k]); const maxV=Math.max(60,...values); const P={l:40,r:12,t:16,b:26}, W=cssW-P.l-P.r, H=cssH-P.t-P.b; ctx.clearRect(0,0,cssW,cssH); ctx.strokeStyle='rgba(120,130,150,.28)'; ctx.lineWidth=1; ctx.font='12px system-ui,-apple-system,Segoe UI,Roboto,sans-serif'; ctx.fillStyle=getComputedStyle(document.body).getPropertyValue('--muted')||'#6b7280'; for(let i=0;i<=5;i++){ const y=P.t+H*(i/5); const v=Math.round(maxV*(1-i/5)); ctx.beginPath(); ctx.moveTo(P.l,y); ctx.lineTo(P.l+W,y); ctx.stroke(); ctx.fillText(String(v),8,y+4);} const gap=4, barW=Math.max(4,(W-gap*(labels.length-1))/labels.length); const brand=getComputedStyle(document.body).getPropertyValue('--brand')||'#5cc9ee'; const brand2=getComputedStyle(document.body).getPropertyValue('--brand2')||'#9aa7ff'; for(let i=0;i<labels.length;i++){ const x=P.l+i*(barW+gap); const h=(values[i]/maxV)*H; const y=P.t+(H-h); const grad=ctx.createLinearGradient(0,y,0,y+h); grad.addColorStop(0,brand.trim()); grad.addColorStop(1,brand2.trim()); ctx.fillStyle=grad; ctx.fillRect(x,y,barW,h); if(labels.length<=14 ? i%2===0 : i%5===0){ const lab=labels[i].slice(5); ctx.fillStyle=getComputedStyle(document.body).getPropertyValue('--muted')||'#6b7280'; ctx.fillText(lab,x,P.t+H+14);} } const sum=values.reduce((a,b)=>a+b,0); ctx.fillStyle=getComputedStyle(document.body).getPropertyValue('--muted')||'#6b7280'; ctx.fillText(`計 ${sum} 分`, cssW-80, P.t+12); }
 document.getElementById('rangeSel')?.addEventListener('change', e=>{ chartRange=parseInt(e.target.value,10)||14; document.getElementById('rangeInfo').textContent=chartRange; drawDailyChart(); });
 
-/* ===== customize ===== */
+/* ===== customize（入力イベントは前回と同じ） ===== */
 $('#fontSel').onchange = e => applyAppearance(e.target.value);
-
-$('#bgFile').onchange=e=>{ const f=e.target.files?.[0]; if(!f) return; const reader=new FileReader();
-  reader.onload=()=>{ const dataUrl=reader.result; setWorkBg(dataUrl); save(BGKEY,dataUrl); applyModeBg(); };
-  reader.readAsDataURL(f);
-};
+$('#bgFile').onchange=e=>{ const f=e.target.files?.[0]; if(!f) return; const reader=new FileReader(); reader.onload=()=>{ const dataUrl=reader.result; setWorkBg(dataUrl); save(BGKEY,dataUrl); applyModeBg(); }; reader.readAsDataURL(f); };
 $('#clearBg').onclick=()=>{ setWorkBg(null); localStorage.removeItem(BGKEY); applyModeBg(); };
-
-$('#bgBreakFile').onchange=e=>{ const f=e.target.files?.[0]; if(!f) return; const reader=new FileReader();
-  reader.onload=()=>{ const dataUrl=reader.result; setBreakBg(dataUrl); save(BGKEY_BREAK,dataUrl); applyModeBg(); };
-  reader.readAsDataURL(f);
-};
+$('#bgBreakFile').onchange=e=>{ const f=e.target.files?.[0]; if(!f) return; const reader=new FileReader(); reader.onload=()=>{ const dataUrl=reader.result; setBreakBg(dataUrl); save(BGKEY_BREAK,dataUrl); applyModeBg(); }; reader.readAsDataURL(f); };
 $('#clearBgBreak').onclick=()=>{ setBreakBg(null); localStorage.removeItem(BGKEY_BREAK); applyModeBg(); };
+$('#applyColors').onclick=()=>{ save(BGOVR_KEY,$('#bgColor').value); save(UIOVR_KEY,$('#uiColor').value); save(FGOVR_KEY,$('#timerColor').value); save(CARDOVR_KEY,$('#cardColor').value); save(CARDTRANS_KEY,$('#cardTrans').checked); applyAppearance($('#fontSel').value); };
+$('#clearColors').onclick=()=>{ [BGOVR_KEY,UIOVR_KEY,FGOVR_KEY,CARDOVR_KEY,CARDTRANS_KEY].forEach(k=>localStorage.removeItem(k)); $('#cardTrans').checked=true; applyAppearance($('#fontSel').value); };
 
-$('#applyColors').onclick=()=>{ 
-  save(BGOVR_KEY, $('#bgColor').value);
-  save(UIOVR_KEY, $('#uiColor').value);
-  save(FGOVR_KEY, $('#timerColor').value);
-  save(CARDOVR_KEY, $('#cardColor').value);
-  save(CARDTRANS_KEY, $('#cardTrans').checked);
-  applyAppearance($('#fontSel').value); 
-};
-$('#clearColors').onclick=()=>{ 
-  [BGOVR_KEY,UIOVR_KEY,FGOVR_KEY,CARDOVR_KEY,CARDTRANS_KEY].forEach(k=>localStorage.removeItem(k));
-  $('#cardTrans').checked=true;
-  applyAppearance($('#fontSel').value); 
-};
-
-/* ===== beep ===== */
+/* ===== beep & binds ===== */
 function beep(){ try{ const a=new (window.AudioContext||window.webkitAudioContext)(); const o=a.createOscillator(), g=a.createGain(); o.connect(g); g.connect(a.destination); o.type='sine'; o.frequency.value=880; g.gain.setValueAtTime(0.05,a.currentTime); o.start(); setTimeout(()=>{ o.stop(); a.close(); },250);}catch{} }
-
-/* ===== timer binds ===== */
 $('#startBtn').onclick=startTimer; $('#pauseBtn').onclick=pauseTimer; $('#resumeBtn').onclick=resumeTimer;
 $('#stopBtn').onclick=stopAndLog; $('#skipBreak').onclick=()=>{ if(mode==='break') toWork(); };
 $('#workMin').oninput=()=>{ if(mode==='idle'){ updateDisplay((+$('#workMin').value||25)*60*1000); } };
